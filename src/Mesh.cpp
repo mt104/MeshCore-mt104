@@ -86,10 +86,31 @@ DispatcherAction Mesh::onRecvPacket(Packet* pkt) {
       }
     }
 
-    // if (self_id.isHashMatch(pkt->path, pkt->getPathHashSize()) && allowPacketForward(pkt)) {
+    // Is this a PAYLOAD_TYPE_TXT_MSG with a recipient hash that matches one in received_companion_hashes?
+    bool is_txt_message_for_directly_heard_companion = false;
+    if (pkt->getPayloadType() == PAYLOAD_TYPE_TXT_MSG) {
+      int i = 0;
+      uint8_t dest_hash = pkt->payload[i++];
+      uint8_t src_hash = pkt->payload[i++];
+      if (companionWasHeardDirect(dest_hash)) {
+        is_txt_message_for_directly_heard_companion = true;
+      }
+    }
+
+    // Are we mentioned anywhere in the path of this packet?
     uint8_t my_hash[PATH_HASH_SIZE];
     self_id.copyHashTo(my_hash);
-    if (self_id.isHashMatchAnywhereInPath(my_hash, pkt->path, pkt->path_len) && allowPacketForward(pkt)) {
+    bool hash_match_anywhere_in_path = self_id.isHashMatchAnywhereInPath(my_hash, pkt->path, pkt->path_len);
+
+    // If we're not in the path, but this is a TXT_MSG for a companion we heard directly, replace path with just our hash and forward it (if allowed)
+    if (is_txt_message_for_directly_heard_companion && !hash_match_anywhere_in_path) {
+      pkt->setPathHashSizeAndCount(PATH_HASH_SIZE, 1);
+      self_id.copyHashTo(pkt->path);
+      hash_match_anywhere_in_path = true;
+      // Not good! This approach causes multiple sends, no acks get back, companion hears multiple copies, and sender eventually reverts to flood.
+    }
+
+    if (hash_match_anywhere_in_path && allowPacketForward(pkt)) {
       if (pkt->getPayloadType() == PAYLOAD_TYPE_MULTIPART) {
         return forwardMultipartDirect(pkt);
       } else if (pkt->getPayloadType() == PAYLOAD_TYPE_ACK) {
@@ -321,7 +342,7 @@ DispatcherAction Mesh::onRecvPacket(Packet* pkt) {
           if (pkt->path_len == 0) {
             uint8_t companion_hash_1B = pkt->payload[0];
             Serial.printf("DEBUG_MARKT: Direct advert heard... companion_hash_1B=%02X\r\n", companion_hash_1B);
-            companionWasHeardDirect(companion_hash_1B);
+            rememberCompanionWasHeardDirect(companion_hash_1B);
           }
 
         } else {
@@ -373,7 +394,7 @@ DispatcherAction Mesh::onRecvPacket(Packet* pkt) {
 }
 
 uint8_t received_companion_hashes[10];
-void Mesh::companionWasHeardDirect(uint8_t companion_hash_1B) {
+void Mesh::rememberCompanionWasHeardDirect(uint8_t companion_hash_1B) {
   // Check if this companion hash has already been received directly. If so, move it to position 0, otherwise store in position 0 after moving all existing entries one position up.
   int found_idx = -1;
   for (int i = 0; i < 10; i++) {
@@ -401,6 +422,15 @@ void Mesh::companionWasHeardDirect(uint8_t companion_hash_1B) {
     received_companion_hashes[0] = companion_hash_1B;
   }
   debugPrintReceivedCompanionHashes();
+}
+
+bool Mesh::companionWasHeardDirect(uint8_t companion_hash_1B) {
+  for (int i = 0; i < 10; i++) {
+    if (received_companion_hashes[i] == companion_hash_1B) {
+      return true;
+    }
+  }
+  return false;
 }
 
 void Mesh::debugPrintReceivedCompanionHashes() {
