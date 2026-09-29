@@ -30,7 +30,9 @@ unsigned long last_mqtt_reconnect_attempt = 0;
 void MqttManager::reconnect() {
   if (millis() - last_mqtt_reconnect_attempt > 10000) {
     last_mqtt_reconnect_attempt = millis();
-    if (_mqttClient.connect(_clientId, mqtt_username, mqtt_password)) {
+    char lwt_topic[200];
+    snprintf(lwt_topic, sizeof(lwt_topic), "%sstatus", _topic_prefix);
+    if (_mqttClient.connect(_clientId, mqtt_username, mqtt_password, lwt_topic, 0, true, "offline")) {
       publish("status", "online");
       // Subscribe to mesh rx/tx topics upon connection
       ////_mqttClient.subscribe("meshcore/inbound/#");
