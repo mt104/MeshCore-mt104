@@ -16,6 +16,7 @@
 #if defined(ESP32)
 #include "helpers/WiFiHelper.h"
 #include "WiFi.h"
+#include "helpers/MQTTManager.h"
 WiFiHelperClass WiFiHelper;
 #include "helpers/Syslog.h"
 #endif
@@ -43,11 +44,14 @@ static unsigned long userBtnDownAt = 0;
 #define USER_BTN_HOLD_OFF_MILLIS 1500
 #endif
 
-/* WIFI RECONNECT TRACKERS */
 #if defined(ESP32)
+// WiFi reconnect management
 bool wifi_needs_reconnect = false;
 unsigned long last_wifi_reconnect_attempt = 0;
 bool startedSyslog = false;
+// MQTT manager
+MqttManager mqttManager;
+bool startedMQTT = false;
 #endif
 
 void setup() {
@@ -145,6 +149,13 @@ void setup() {
         startedSyslog = true;
         syslogSsend(1, 6, "init", "Syslog started");
       }
+      if (!startedMQTT) {
+        mqttManager.setCredentials("meshcore", "meshcore"); //TODO: Make configurable via CLI and persist to filesystem
+        mqttManager.begin("192.168.2.59", 1883, "meshcore_repeater"); // TODO: Make configurable via CLI and persist to filesystem
+        startedMQTT = true;
+        syslogSsend(1, 6, "init", "MQTT started");
+      }
+
       wifi_needs_reconnect = false;
     }
   });
@@ -222,6 +233,12 @@ void loop() {
   } else {
     userBtnDownAt = 0;
   }
+#endif
+
+#if defined(ESP32)
+if (startedMQTT) {
+  mqttManager.update();  // Handle MQTT connection and messages
+}
 #endif
 
   the_mesh.loop();
