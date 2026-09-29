@@ -157,6 +157,7 @@ void setup() {
         mqttManager.begin("192.168.2.59", 1883, "meshcore_repeater"); // TODO: Make configurable via CLI and persist to filesystem
         startedMQTT = true;
         syslogSsend(1, 6, "init", "MQTT started");
+        the_mesh.setMQTTManager(&mqttManager);
       }
 
       wifi_needs_reconnect = false;

@@ -60,6 +60,15 @@
 
 #define LAZY_CONTACTS_WRITE_DELAY    5000
 
+#if defined(ESP32)
+#include "helpers/MQTTManager.h"
+
+MqttManager *_mqttManager;
+void MyMesh::setMQTTManager(MqttManager* manager) {
+  _mqttManager = manager;
+}
+#endif
+
 void MyMesh::putNeighbour(const mesh::Identity &id, uint32_t timestamp, float snr) {
 #if MAX_NEIGHBOURS // check if neighbours enabled
   // find existing neighbour, else use least recently updated
@@ -565,6 +574,29 @@ mesh::DispatcherAction MyMesh::onRecvPacket(mesh::Packet* pkt) {
   } else {
     recv_pkt_region = NULL;
   }
+
+  #if defined(ESP32)
+  // If this is a flood packet then look in the path for the last hop
+  if (pkt->isRouteFlood()) {
+    // Who did we receive this packet from?  Look in the path for the last hop
+    if (pkt->getPathHashCount() > 0) {
+      float last_hop_snr = pkt->getSNR();
+      char heard_from[3];
+      sprintf(heard_from, "%02X", pkt->path[pkt->getPathByteLen() - 1]);
+      char snr_str[16];
+      sprintf(snr_str, "%s %d.%02d", heard_from, (int)last_hop_snr, (int)(last_hop_snr * 100) % 100);
+      syslogDebug("Last hop SNR", snr_str);
+
+      if (_mqttManager != NULL) {
+        char snr_topic[32];
+        sprintf(snr_topic, "snr/%s", heard_from);
+        sprintf(snr_str, "%d.%02d", (int)last_hop_snr, (int)(last_hop_snr * 100) % 100);
+        _mqttManager->publish(snr_topic, snr_str);
+      }
+    }
+  }
+  #endif
+
   return Mesh::onRecvPacket(pkt);
 }
 
