@@ -7,6 +7,7 @@ class MqttManager {
 public:
   MqttManager();
   void setCredentials(const char *username, const char *password);
+  void setTopicPrefix(const char *prefix);
   void begin(const char *server, uint16_t port, const char *clientId);
   void update(); // Call in loop()
   bool publish(const char *topic, const char *payload);

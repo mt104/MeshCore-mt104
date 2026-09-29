@@ -1,5 +1,7 @@
 #include "MqttManager.h"
 
+//#include "helpers/Syslog.h"
+
 MqttManager::MqttManager() : _mqttClient(_wifiClient) {}
 
 void MqttManager::begin(const char *server, uint16_t port, const char *clientId) {
@@ -17,12 +19,19 @@ void MqttManager::setCredentials(const char *username, const char *password) {
   mqtt_password = strdup(password);
 }
 
+char _topic_prefix[100] = "meshcore/";
+void MqttManager::setTopicPrefix(const char *prefix) {
+  strncpy(_topic_prefix, prefix, sizeof(_topic_prefix) - 1);
+  _topic_prefix[sizeof(_topic_prefix) - 1] = '\0'; // Ensure null-termination
+  //syslogDebug("MQTT topic prefix", _topic_prefix);
+}
+
 unsigned long last_mqtt_reconnect_attempt = 0;
 void MqttManager::reconnect() {
   if (millis() - last_mqtt_reconnect_attempt > 10000) {
     last_mqtt_reconnect_attempt = millis();
     if (_mqttClient.connect(_clientId, mqtt_username, mqtt_password)) {
-      _mqttClient.publish("meshcore/status", "online");
+      publish("status", "online");
       // Subscribe to mesh rx/tx topics upon connection
       ////_mqttClient.subscribe("meshcore/inbound/#");
     }
@@ -36,9 +45,11 @@ void MqttManager::update() {
   _mqttClient.loop();
 }
 
+char _publish_topic_buffer[200];
 bool MqttManager::publish(const char *topic, const char *payload) {
   if (_mqttClient.connected()) {
-    return _mqttClient.publish(topic, payload);
+    snprintf(_publish_topic_buffer, sizeof(_publish_topic_buffer), "%s%s", _topic_prefix, topic);
+    return _mqttClient.publish(_publish_topic_buffer, payload);
   }
   return false;
 }

@@ -151,6 +151,9 @@ void setup() {
       }
       if (!startedMQTT) {
         mqttManager.setCredentials("meshcore", "meshcore"); //TODO: Make configurable via CLI and persist to filesystem
+        char topic_prefix[100];
+        sprintf(topic_prefix, "meshcore/%02X%02X%02X/", the_mesh.self_id.pub_key[0], the_mesh.self_id.pub_key[1], the_mesh.self_id.pub_key[2]);
+        mqttManager.setTopicPrefix(topic_prefix);
         mqttManager.begin("192.168.2.59", 1883, "meshcore_repeater"); // TODO: Make configurable via CLI and persist to filesystem
         startedMQTT = true;
         syslogSsend(1, 6, "init", "MQTT started");
