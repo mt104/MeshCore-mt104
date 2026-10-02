@@ -20,6 +20,9 @@ WiFiHelperClass WiFiHelper;
 #include "helpers/Syslog.h"
 #endif
 
+#include "helpers/BTHomeService.h"
+unsigned long last_bthome_send = 0;
+
   StdRNG fast_rng;
   SimpleMeshTables tables;
 
@@ -153,6 +156,8 @@ void setup() {
   board.setInhibitSleep(WiFiHelper.shouldInhibitSleep()); // Update sleep inhibition based on WiFi configuration
 #endif
 
+bthomeService.init("MeshCoreMarkTV3test");  // Initialize BTHome service for BLE sensor data
+
   // send out initial zero hop Advertisement to the mesh
 #if ENABLE_ADVERT_ON_BOOT == 1
   the_mesh.sendSelfAdvertisement(16000, false);
@@ -223,6 +228,12 @@ void loop() {
     userBtnDownAt = 0;
   }
 #endif
+
+  // Send BTHome sensor data periodically
+  if (millis() - last_bthome_send >= 5000) {
+    bthomeService.sendSensorData(25.0, 80);
+    last_bthome_send = millis();
+  }
 
   the_mesh.loop();
   sensors.loop();
