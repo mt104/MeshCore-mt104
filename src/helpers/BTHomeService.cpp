@@ -5,7 +5,16 @@ BTHomeService bthomeService;
 void BTHomeService::init(const char *deviceName) {
   if (isInitialized) return;
   BLEDevice::init(deviceName);
+
+  // Disable address privacy so the MAC remains static across advert cycles
+  esp_ble_gap_config_local_privacy(false);
+
   pAdvertising = BLEDevice::getAdvertising();
+
+  // Ensure scan responses are completely disabled so the entire 13-byte array goes out in a single primary
+  // advertisement frame
+  pAdvertising->setScanResponse(false);
+  
   isInitialized = true;
 }
 
