@@ -207,7 +207,10 @@ DispatcherAction Mesh::onRecvPacket(Packet* pkt) {
                   if (pkt->isRouteFlood()) {
                     // send a reciprocal return path to sender, but send DIRECTLY!
                     mesh::Packet* rpath = createPathReturn(&src_hash, secret, pkt->path, pkt->path_len, 0, NULL, 0);
-                    if (rpath) sendDirect(rpath, path, path_len, 500);
+                    if (rpath) {
+                      //sendDirect(rpath, path, path_len, 500);
+                      sendFlood(rpath, 500, hash_size);
+                    }
                   }
                 }
               } else {
