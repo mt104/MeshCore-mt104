@@ -23,6 +23,7 @@ void syslogBegin(const char* server, const char* source) {
     _doneBegin = true;
 }
 
+char _buffer_syslogSend[256];
 void syslogSsend(uint8_t facility, uint8_t severity, const char *tag, const char *message) {
   // Silently fail if WiFi is not connected or we didn't begin syslog
   if (WiFi.status() != WL_CONNECTED || !_doneBegin) {
@@ -32,12 +33,11 @@ void syslogSsend(uint8_t facility, uint8_t severity, const char *tag, const char
   uint8_t pri = (facility * 8) + severity;
 
   // Format header: <PRI>HOSTNAME TAG: MESSAGE
-  char buffer[256];
-  snprintf(buffer, sizeof(buffer), "<%d>%s %s: %s", pri, syslogSource, tag, message);
+  snprintf(_buffer_syslogSend, sizeof(_buffer_syslogSend), "<%d>%s %s: %s", pri, syslogSource, tag, message);
 
   // Send UDP Packet
   udpSyslog.beginPacket(syslogServer, 514);  // standard syslog port
-  udpSyslog.write((const uint8_t *)buffer, strlen(buffer));
+  udpSyslog.write((const uint8_t *)_buffer_syslogSend, strlen(_buffer_syslogSend));
   udpSyslog.endPacket();
 }
 
