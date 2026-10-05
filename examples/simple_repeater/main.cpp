@@ -19,6 +19,7 @@
 #include "helpers/MQTTManager.h"
 WiFiHelperClass WiFiHelper;
 #include "helpers/Syslog.h"
+unsigned long wifiConnectionCount = 0;
 #endif
 
   StdRNG fast_rng;
@@ -143,11 +144,14 @@ void setup() {
       Serial.printf("WiFi disconnected. Flagging for reconnect...\r\n");
       wifi_needs_reconnect = true;
     } else if (event == ARDUINO_EVENT_WIFI_STA_GOT_IP) {
+      wifiConnectionCount++;
       Serial.printf("WiFi connected successfully, IP = %s\r\n", WiFi.localIP().toString().c_str());
       if (!startedSyslog) {
         syslogBegin("192.168.2.60", WiFi.localIP().toString().c_str());
         startedSyslog = true;
-        syslogSsend(1, 6, "init", "Syslog started");
+        char buffer[100];
+        snprintf(buffer, sizeof(buffer), "Syslog started, WiFi connection count = %d", wifiConnectionCount);
+        syslogSsend(1, 6, "init", buffer);
       }
       if (!startedMQTT) {
         mqttManager.setCredentials("meshcore", "meshcore"); //TODO: Make configurable via CLI and persist to filesystem
