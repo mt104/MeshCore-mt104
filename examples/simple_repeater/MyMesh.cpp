@@ -584,13 +584,13 @@ mesh::DispatcherAction MyMesh::onRecvPacket(mesh::Packet* pkt) {
       char heard_from[3];
       sprintf(heard_from, "%02X", pkt->path[pkt->getPathByteLen() - 1]);
       char snr_str[16];
-      sprintf(snr_str, "%s %d.%02d", heard_from, (int)last_hop_snr, (abs((int)(last_hop_snr * 100)) % 100));
+      sprintf(snr_str, "%s %d.%02d", heard_from, (int)last_hop_snr, (int)(last_hop_snr * 100) % 100);
       syslogDebug("Last hop SNR", snr_str);
 
       if (_mqttManager != NULL) {
         char snr_topic[32];
         sprintf(snr_topic, "snr/%s", heard_from);
-        sprintf(snr_str, "%d.%02d", (int)last_hop_snr, (abs((int)(last_hop_snr * 100)) % 100));
+        sprintf(snr_str, "%d.%02d", (int)last_hop_snr, (int)(last_hop_snr * 100) % 100);
         _mqttManager->publish(snr_topic, snr_str);
       }
     }
