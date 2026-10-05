@@ -47,13 +47,18 @@ void MqttManager::update() {
   _mqttClient.loop();
 }
 
-char _publish_topic_buffer[200];
 bool MqttManager::publish(const char *topic, const char *payload) {
-  if (_mqttClient.connected()) {
-    snprintf(_publish_topic_buffer, sizeof(_publish_topic_buffer), "%s%s", _topic_prefix, topic);
-    return _mqttClient.publish(_publish_topic_buffer, payload);
+  try {
+    if (_mqttClient.connected()) {
+      char buffer[200];
+      snprintf(buffer, sizeof(buffer), "%s%s", _topic_prefix, topic);
+      return _mqttClient.publish(buffer, payload);
+    }
+    return false;
+  } catch (...) {
+    // Handle any exceptions that may occur during publishing
+    return false;
   }
-  return false;
 }
 
 void MqttManager::callback(char *topic, byte *payload, unsigned int length) {
