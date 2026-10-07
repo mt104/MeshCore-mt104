@@ -2,14 +2,22 @@
 
 BTHomeService bthomeService;
 
+char *_name = nullptr;
+
 void BTHomeService::init(const char *deviceName) {
   if (isInitialized) return;
   BLEDevice::init(deviceName);
+  _name = strdup(deviceName);
 
   // Disable address privacy so the MAC remains static across advert cycles
   esp_ble_gap_config_local_privacy(false);
 
   pAdvertising = BLEDevice::getAdvertising();
+
+  // Configure advertising parameters
+  pAdvertising->setScanResponse(false);
+  pAdvertising->setMinInterval(0x20); // 20ms advertising interval
+  pAdvertising->setMaxInterval(0x40); // 40ms advertising interval
 
   // Ensure scan responses are completely disabled so the entire 13-byte array goes out in a single primary
   // advertisement frame
@@ -18,32 +26,35 @@ void BTHomeService::init(const char *deviceName) {
   isInitialized = true;
 }
 
-void BTHomeService::sendSensorData(float temperature, uint8_t batteryPercent) {
+void BTHomeService::sendSensorData(uint8_t batteryPercent) {
   if (!isInitialized) init("MeshCore-Sensor");
 
-  int16_t tempScaled = static_cast<int16_t>(temperature * 100.0f);
+  uint8_t payload[8];
 
-  // Build complete BTHome V2 advertisement payload
-  // Service Data (0x16) + UUID (0xF6D2) + BTHome Header (0x40) + Sensor Data
-  std::string bthomePayload = "";
-  //bthomePayload += (char)0xD2; // BTHome UUID Low Byte (0xF6D2)
-  //bthomePayload += (char)0xF6; // BTHome UUID High Byte
-  bthomePayload += (char)0x40; // BTHome V2, unencrypted
+  int pos = 0;
 
-  // Battery Metric (0x01)
-  bthomePayload += (char)0x01;
-  bthomePayload += (char)batteryPercent;
+  // BTHome Device Info Header
+  payload[pos++] = 0x40;
 
-  // Temperature Metric (0x02, int16_t little-endian)
-  bthomePayload += (char)0x02;
-  bthomePayload += (char)(tempScaled & 0xFF);
-  bthomePayload += (char)((tempScaled >> 8) & 0xFF);
+  payload[pos++] = 0x01;
+  payload[pos++] = batteryPercent;
+
+  // int16_t temp_raw = (int16_t)(temperature * 100.0f);
+  // payload[pos++] = 0x02;
+  // payload[pos++] = (uint8_t)(temp_raw & 0xFF);        // Temperature Low Byte
+  // payload[pos++] = (uint8_t)((temp_raw >> 8) & 0xFF); // Temperature High Byte
 
   BLEAdvertisementData advData;
   advData.setFlags(0x06); // General Discoverable + BR/EDR Not Supported
-  advData.setServiceData(BLEUUID((uint16_t)0xF6D2), bthomePayload);
 
-  // Stop and restart advertising to ensure fresh payload broadcast
+  String payloadStr = "";
+  for (int i = 0; i < pos; i++) {
+    payloadStr += (char)payload[i];
+  }
+
+  advData.setServiceData(BLEUUID((uint16_t)0xFCD2), payloadStr.c_str());
+  advData.setName(_name);
+
   pAdvertising->stop();
   pAdvertising->setAdvertisementData(advData);
   pAdvertising->start();

@@ -12,7 +12,7 @@ private:
 
 public:
   void init(const char *deviceName);
-  void sendSensorData(float temperature, uint8_t batteryPercent);
+  void sendSensorData(uint8_t batteryPercent);
 };
 
 extern BTHomeService bthomeService;

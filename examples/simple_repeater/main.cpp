@@ -231,7 +231,12 @@ void loop() {
 
   // Send BTHome sensor data periodically
   if (millis() - last_bthome_send >= 5000) {
-    bthomeService.sendSensorData(25.0, 80);
+    float mv = board.getBattMilliVolts();
+    // Calculate battery percent, assuming that 0% is 3000mV and 100% is 4200mV
+    int batteryPercent = (mv - 3000) * 100 / (4200 - 3000);
+    if (batteryPercent < 0) batteryPercent = 0;
+    if (batteryPercent > 100) batteryPercent = 100;
+    bthomeService.sendSensorData(batteryPercent);
     last_bthome_send = millis();
   }
 
