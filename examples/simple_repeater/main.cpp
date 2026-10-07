@@ -20,7 +20,7 @@ WiFiHelperClass WiFiHelper;
 #include "helpers/Syslog.h"
 #endif
 
-#if defined(ESP32)
+#if defined(ESP32) or defined(NRF52_PLATFORM)
 #include "helpers/BTHomeService.h"
 unsigned long last_bthome_send = 0;
 #endif
@@ -158,7 +158,7 @@ void setup() {
   board.setInhibitSleep(WiFiHelper.shouldInhibitSleep()); // Update sleep inhibition based on WiFi configuration
 #endif
 
-#if defined(ESP32)
+#if defined(ESP32) or defined(NRF52_PLATFORM)
   bthomeService.init(the_mesh.getNodePrefs()->node_name); // Initialize BTHome service for BLE sensor data
 #endif
 
@@ -233,7 +233,7 @@ void loop() {
   }
 #endif
 
-#if defined(ESP32)
+#if defined(ESP32) or defined(NRF52_PLATFORM)
   // Send BTHome sensor data periodically
   if (millis() - last_bthome_send >= 5000) {
     float mv = board.getBattMilliVolts();

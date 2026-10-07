@@ -1,11 +1,18 @@
 #pragma once
 
-#if defined(ESP32)
-
 #include <Arduino.h>
+
+#if defined(ESP32)
 #include <BLEAdvertising.h>
 #include <BLEDevice.h>
 #include <BLEUtils.h>
+#endif
+
+#if defined(NRF52_PLATFORM)
+#include <bluefruit.h>
+#endif
+
+#if defined(ESP32) or defined(NRF52_PLATFORM)
 
 class BTHomeService {
 private:
