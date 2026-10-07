@@ -1,5 +1,7 @@
 #pragma once
 
+#if defined(ESP32)
+
 #include <Arduino.h>
 #include <BLEAdvertising.h>
 #include <BLEDevice.h>
@@ -16,3 +18,5 @@ public:
 };
 
 extern BTHomeService bthomeService;
+
+#endif
