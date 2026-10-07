@@ -1,5 +1,7 @@
 #include "BTHomeService.h"
 
+#if defined(ESP32)
+
 BTHomeService bthomeService;
 
 char *_name = nullptr;
@@ -59,3 +61,4 @@ void BTHomeService::sendSensorData(uint8_t batteryPercent) {
   pAdvertising->setAdvertisementData(advData);
   pAdvertising->start();
 }
+#endif
