@@ -241,7 +241,7 @@ void loop() {
     int batteryPercent = (mv - 3000) * 100 / (4200 - 3000);
     if (batteryPercent < 0) batteryPercent = 0;
     if (batteryPercent > 100) batteryPercent = 100;
-    bthomeService.sendSensorData(batteryPercent);
+    bthomeService.sendSensorData(batteryPercent, (uint16_t)mv);
     last_bthome_send = millis();
   }
 #endif

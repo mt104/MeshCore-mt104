@@ -14,7 +14,7 @@ private:
 
 public:
   void init(const char *deviceName);
-  void sendSensorData(uint8_t batteryPercent);
+  void sendSensorData(uint8_t batteryPercent, uint16_t batteryVoltage);
 };
 
 extern BTHomeService bthomeService;
