@@ -28,10 +28,10 @@ void BTHomeService::init(const char *deviceName) {
   isInitialized = true;
 }
 
-void BTHomeService::sendSensorData(uint8_t batteryPercent) {
+void BTHomeService::sendSensorData(uint8_t batteryPercent, uint16_t batteryVoltage) {
   if (!isInitialized) init("MeshCore-Sensor");
 
-  uint8_t payload[8];
+  uint8_t payload[100]; // Should really keep track of how much we need rather than having an arbitrary large buffer
 
   int pos = 0;
 
@@ -40,6 +40,9 @@ void BTHomeService::sendSensorData(uint8_t batteryPercent) {
 
   payload[pos++] = 0x01;
   payload[pos++] = batteryPercent;
+  payload[pos++] = 0x0c;
+  payload[pos++] = (uint8_t)(batteryVoltage & 0xFF);
+  payload[pos++] = (uint8_t)((batteryVoltage >> 8) & 0xFF);
 
   // int16_t temp_raw = (int16_t)(temperature * 100.0f);
   // payload[pos++] = 0x02;
