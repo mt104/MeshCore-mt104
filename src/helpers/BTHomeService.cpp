@@ -42,7 +42,7 @@ void BTHomeService::init(const char *deviceName) {
   isInitialized = true;
 }
 
-void BTHomeService::sendSensorData(uint8_t batteryPercent, uint16_t batteryVoltage) {
+void BTHomeService::sendSensorData(uint8_t batteryPercent, uint16_t batteryVoltage, int8_t noiseFloor) {
 #if defined(ESP32)
   if (!isInitialized) init("MeshCore-Sensor");
 #endif
@@ -63,6 +63,9 @@ void BTHomeService::sendSensorData(uint8_t batteryPercent, uint16_t batteryVolta
   payload[pos++] = 0x0c;
   payload[pos++] = (uint8_t)(batteryVoltage & 0xFF);
   payload[pos++] = (uint8_t)((batteryVoltage >> 8) & 0xFF);
+  // Generic 8 bit signed integer sensor (noise floor)
+  payload[pos++] = 0x59;
+  payload[pos++] = (int8_t)(noiseFloor & 0xFF);
 
 #if defined(ESP32)
   BLEAdvertisementData advData;
