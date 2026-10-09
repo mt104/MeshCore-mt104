@@ -20,6 +20,12 @@ WiFiHelperClass WiFiHelper;
 #include "helpers/Syslog.h"
 #endif
 
+#if defined(ESP32) or defined(NRF52_PLATFORM)
+#include "target.h"
+#include "helpers/BTHomeService.h"
+unsigned long last_bthome_send = 0;
+#endif
+
   StdRNG fast_rng;
   SimpleMeshTables tables;
 
@@ -153,6 +159,10 @@ void setup() {
   board.setInhibitSleep(WiFiHelper.shouldInhibitSleep()); // Update sleep inhibition based on WiFi configuration
 #endif
 
+#if defined(ESP32) or defined(NRF52_PLATFORM)
+  bthomeService.init(the_mesh.getNodePrefs()->node_name); // Initialize BTHome service for BLE sensor data
+#endif
+
   // send out initial zero hop Advertisement to the mesh
 #if ENABLE_ADVERT_ON_BOOT == 1
   the_mesh.sendSelfAdvertisement(16000, false);
@@ -221,6 +231,21 @@ void loop() {
     }
   } else {
     userBtnDownAt = 0;
+  }
+#endif
+
+#if defined(ESP32) or defined(NRF52_PLATFORM)
+  // Send BTHome sensor data periodically
+  if (millis() - last_bthome_send >= 30000) {
+    // Battery Voltage in millivolts
+    float mv = board.getBattMilliVolts();
+    // Calculate battery percent, assuming that 0% is 3000mV and 100% is 4200mV
+    int batteryPercent = (mv - 3000) * 100 / (4200 - 3000);
+    if (batteryPercent < 0) batteryPercent = 0;
+    if (batteryPercent > 100) batteryPercent = 100;
+    // Update advertisment
+    bthomeService.sendSensorData(batteryPercent, (uint16_t)mv, radio_driver.getNoiseFloor());
+    last_bthome_send = millis();
   }
 #endif
 
