@@ -39,7 +39,17 @@ void BTHomeService::init(const char *deviceName) {
   Bluefruit.setTxPower(4); // Set transmit power (dBm)
 #endif
 
+  resetPacketCounter();
   isInitialized = true;
+}
+
+void BTHomeService::resetPacketCounter() {
+  packetsSinceReset = 0;
+  lastResetTime = millis();
+}
+
+void BTHomeService::incrementPacketCounter() {
+  packetsSinceReset++;
 }
 
 void BTHomeService::sendSensorData(uint8_t batteryPercent, uint16_t batteryVoltage, int8_t noiseFloor) {
@@ -66,6 +76,13 @@ void BTHomeService::sendSensorData(uint8_t batteryPercent, uint16_t batteryVolta
   // Generic 8 bit signed integer sensor (noise floor)
   payload[pos++] = 0x59;
   payload[pos++] = (int8_t)(noiseFloor & 0xFF);
+
+  float minutesSinceReset = (millis() - lastResetTime) / 60000.0f;
+  uint8_t packetsPerMinute = (uint8_t)(packetsSinceReset / minutesSinceReset);
+  resetPacketCounter();
+  // Generic 8 bit unsigned integer sensor (packets per minute)
+  payload[pos++] = 0x09;
+  payload[pos++] = packetsPerMinute;
 
 #if defined(ESP32)
   BLEAdvertisementData advData;

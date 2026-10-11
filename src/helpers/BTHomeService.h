@@ -18,9 +18,13 @@ class BTHomeService {
 private:
   BLEAdvertising *pAdvertising;
   bool isInitialized = false;
+  uint8_t packetsSinceReset = 0;
+  unsigned long lastResetTime = 0;
 
 public:
   void init(const char *deviceName);
+  void resetPacketCounter();
+  void incrementPacketCounter();
   void sendSensorData(uint8_t batteryPercent, uint16_t batteryVoltage, int8_t noiseFloor);
 };
 
