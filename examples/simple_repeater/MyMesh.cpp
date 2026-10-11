@@ -572,6 +572,19 @@ mesh::DispatcherAction MyMesh::onRecvPacket(mesh::Packet* pkt) {
   } else {
     recv_pkt_region = NULL;
   }
+
+#if defined(ESP32) or defined(NRF52_PLATFORM)
+  // If this is a flood packet then look in the path for the last hop
+  if (pkt->isRouteFlood()) {
+    // Who did we receive this packet from?  Look in the path for the last hop
+    if (pkt->getPathHashCount() > 0) {
+      float last_hop_snr = pkt->getSNR();
+      uint8_t heard_from = pkt->path[pkt->getPathByteLen() - 1];
+      bthomeService.updateNeighboursSNR(heard_from, last_hop_snr);
+    }
+  }
+#endif
+
   return Mesh::onRecvPacket(pkt);
 }
 

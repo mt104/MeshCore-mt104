@@ -236,7 +236,7 @@ void loop() {
 
 #if defined(ESP32) or defined(NRF52_PLATFORM)
   // Send BTHome sensor data periodically
-  if (millis() - last_bthome_send >= 30000) {
+  if (millis() - last_bthome_send >= BTHOME_INTERVAL_MS) {
     // Battery Voltage in millivolts
     float mv = board.getBattMilliVolts();
     // Calculate battery percent, assuming that 0% is 3000mV and 100% is 4200mV

@@ -40,6 +40,7 @@ void BTHomeService::init(const char *deviceName) {
 #endif
 
   resetPacketCounter();
+  resetNeighboursSNR();
   isInitialized = true;
 }
 
@@ -50,6 +51,46 @@ void BTHomeService::resetPacketCounter() {
 
 void BTHomeService::incrementPacketCounter() {
   packetsSinceReset++;
+}
+
+void BTHomeService::resetNeighboursSNR() {
+  // Zero out id and SNR for all neighbours
+  for (int i = 0; i < BTHOME_MAX_NEIGHBOURS; i++) {
+    neighbours[i].id = 0;
+    neighbours[i].snr = 0.0f;
+  }
+}
+
+void BTHomeService::removeFirstNeighbour() {
+  for (int i = 0; i < BTHOME_MAX_NEIGHBOURS - 1; i++) {
+    neighbours[i] = neighbours[i + 1];
+  }
+  neighbours[BTHOME_MAX_NEIGHBOURS - 1].id = 0;
+  neighbours[BTHOME_MAX_NEIGHBOURS - 1].snr = 0.0f;
+}
+
+void BTHomeService::updateNeighboursSNR(uint8_t from, float snr) {
+  bool handled = false;
+  // If we already know about this neighbour, update its SNR; otherwise, add it to the list
+  for (int i = 0; i < BTHOME_MAX_NEIGHBOURS; i++) {
+    if (neighbours[i].id == from) {
+      // Only update if higher SNR than previously recorded
+      if (snr > neighbours[i].snr) {
+        neighbours[i].snr = snr;
+      }
+      handled = true;
+      break;
+    }
+  }
+  if (handled) return;
+  // If we didn't find the neighbour, add it to the first empty slot
+  for (int i = 0; i < BTHOME_MAX_NEIGHBOURS; i++) {
+    if (neighbours[i].id == 0) {
+      neighbours[i].id = from;
+      neighbours[i].snr = snr;
+      break;
+    }
+  }
 }
 
 void BTHomeService::sendSensorData(uint8_t batteryPercent, uint16_t batteryVoltage, int8_t noiseFloor) {
@@ -77,12 +118,36 @@ void BTHomeService::sendSensorData(uint8_t batteryPercent, uint16_t batteryVolta
   payload[pos++] = 0x59;
   payload[pos++] = (int8_t)(noiseFloor & 0xFF);
 
+  // Packets per minute
   float minutesSinceReset = (millis() - lastResetTime) / 60000.0f;
   uint8_t packetsPerMinute = (uint8_t)(packetsSinceReset / minutesSinceReset);
   resetPacketCounter();
   // Generic 8 bit unsigned integer sensor (packets per minute)
   payload[pos++] = 0x09;
   payload[pos++] = packetsPerMinute;
+
+  // Neighbours' SNR to serial port for debugging, converting the 3 bytes in id to a string in hex
+  for (int i = 0; i < BTHOME_MAX_NEIGHBOURS; i++) {
+    if (neighbours[i].id != 0) {
+      char idStr[3];
+      snprintf(idStr, sizeof(idStr), "%02X", neighbours[i].id);
+      Serial.print("Neighbour ID: ");
+      Serial.print(idStr);
+      Serial.print(" SNR: ");
+      Serial.println(neighbours[i].snr);
+    }
+  }
+  Serial.println("");
+
+  // Neighbours' SNR data as text, one at once using first in array
+  char neighbourData[10];
+  payload[pos++] = 0x53;
+  sprintf(neighbourData, "%02X %0.2f", neighbours[0].id, neighbours[0].snr);
+  payload[pos++] = strlen(neighbourData);
+  for (int i = 0; i < strlen(neighbourData); i++) {
+    payload[pos++] = neighbourData[i];
+  }
+  removeFirstNeighbour();
 
 #if defined(ESP32)
   BLEAdvertisementData advData;
