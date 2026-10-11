@@ -14,7 +14,8 @@
 
 #if defined(ESP32) or defined(NRF52_PLATFORM)
 
-#define BTHOME_MAX_NEIGHBOURS 10
+#define BTHOME_MAX_NEIGHBOURS 4
+#define BTHOME_INTERVAL_MS 20000
 
 class BTHomeService {
 private:
@@ -27,13 +28,14 @@ private:
     uint8_t id;
     float snr;
   };
-  Neighbour neighbours[BTHOME_MAX_NEIGHBOURS];  // Array to hold up to 10 neighbours
+  Neighbour neighbours[BTHOME_MAX_NEIGHBOURS];
 
 public:
   void init(const char *deviceName);
   void resetPacketCounter();
   void incrementPacketCounter();
   void resetNeighboursSNR();
+  void removeFirstNeighbour();
   void updateNeighboursSNR(uint8_t from, float snr);
   void sendSensorData(uint8_t batteryPercent, uint16_t batteryVoltage, int8_t noiseFloor);
 };

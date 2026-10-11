@@ -61,6 +61,14 @@ void BTHomeService::resetNeighboursSNR() {
   }
 }
 
+void BTHomeService::removeFirstNeighbour() {
+  for (int i = 0; i < BTHOME_MAX_NEIGHBOURS - 1; i++) {
+    neighbours[i] = neighbours[i + 1];
+  }
+  neighbours[BTHOME_MAX_NEIGHBOURS - 1].id = 0;
+  neighbours[BTHOME_MAX_NEIGHBOURS - 1].snr = 0.0f;
+}
+
 void BTHomeService::updateNeighboursSNR(uint8_t from, float snr) {
   bool handled = false;
   // If we already know about this neighbour, update its SNR; otherwise, add it to the list
@@ -118,8 +126,7 @@ void BTHomeService::sendSensorData(uint8_t batteryPercent, uint16_t batteryVolta
   payload[pos++] = 0x09;
   payload[pos++] = packetsPerMinute;
 
-  // Neighbours' SNR
-  // Print neighbours' SNR to serial port for debugging, converting the 3 bytes in id to a string in hex
+  // Neighbours' SNR to serial port for debugging, converting the 3 bytes in id to a string in hex
   for (int i = 0; i < BTHOME_MAX_NEIGHBOURS; i++) {
     if (neighbours[i].id != 0) {
       char idStr[3];
@@ -131,7 +138,17 @@ void BTHomeService::sendSensorData(uint8_t batteryPercent, uint16_t batteryVolta
     }
   }
   Serial.println("");
-  
+
+  // Neighbours' SNR data as text, one at once using first in array
+  char neighbourData[10];
+  payload[pos++] = 0x53;
+  sprintf(neighbourData, "%02X %0.2f", neighbours[0].id, neighbours[0].snr);
+  payload[pos++] = strlen(neighbourData);
+  for (int i = 0; i < strlen(neighbourData); i++) {
+    payload[pos++] = neighbourData[i];
+  }
+  removeFirstNeighbour();
+
 #if defined(ESP32)
   BLEAdvertisementData advData;
   advData.setFlags(0x06); // General Discoverable + BR/EDR Not Supported
