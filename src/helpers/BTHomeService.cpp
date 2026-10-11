@@ -40,6 +40,7 @@ void BTHomeService::init(const char *deviceName) {
 #endif
 
   resetPacketCounter();
+  resetNeighboursSNR();
   isInitialized = true;
 }
 
@@ -50,6 +51,38 @@ void BTHomeService::resetPacketCounter() {
 
 void BTHomeService::incrementPacketCounter() {
   packetsSinceReset++;
+}
+
+void BTHomeService::resetNeighboursSNR() {
+  // Zero out id and SNR for all neighbours
+  for (int i = 0; i < BTHOME_MAX_NEIGHBOURS; i++) {
+    neighbours[i].id = 0;
+    neighbours[i].snr = 0.0f;
+  }
+}
+
+void BTHomeService::updateNeighboursSNR(uint8_t from, float snr) {
+  bool handled = false;
+  // If we already know about this neighbour, update its SNR; otherwise, add it to the list
+  for (int i = 0; i < BTHOME_MAX_NEIGHBOURS; i++) {
+    if (neighbours[i].id == from) {
+      // Only update if higher SNR than previously recorded
+      if (snr > neighbours[i].snr) {
+        neighbours[i].snr = snr;
+      }
+      handled = true;
+      break;
+    }
+  }
+  if (handled) return;
+  // If we didn't find the neighbour, add it to the first empty slot
+  for (int i = 0; i < BTHOME_MAX_NEIGHBOURS; i++) {
+    if (neighbours[i].id == 0) {
+      neighbours[i].id = from;
+      neighbours[i].snr = snr;
+      break;
+    }
+  }
 }
 
 void BTHomeService::sendSensorData(uint8_t batteryPercent, uint16_t batteryVoltage, int8_t noiseFloor) {
@@ -77,6 +110,7 @@ void BTHomeService::sendSensorData(uint8_t batteryPercent, uint16_t batteryVolta
   payload[pos++] = 0x59;
   payload[pos++] = (int8_t)(noiseFloor & 0xFF);
 
+  // Packets per minute
   float minutesSinceReset = (millis() - lastResetTime) / 60000.0f;
   uint8_t packetsPerMinute = (uint8_t)(packetsSinceReset / minutesSinceReset);
   resetPacketCounter();
@@ -84,6 +118,20 @@ void BTHomeService::sendSensorData(uint8_t batteryPercent, uint16_t batteryVolta
   payload[pos++] = 0x09;
   payload[pos++] = packetsPerMinute;
 
+  // Neighbours' SNR
+  // Print neighbours' SNR to serial port for debugging, converting the 3 bytes in id to a string in hex
+  for (int i = 0; i < BTHOME_MAX_NEIGHBOURS; i++) {
+    if (neighbours[i].id != 0) {
+      char idStr[3];
+      snprintf(idStr, sizeof(idStr), "%02X", neighbours[i].id);
+      Serial.print("Neighbour ID: ");
+      Serial.print(idStr);
+      Serial.print(" SNR: ");
+      Serial.println(neighbours[i].snr);
+    }
+  }
+  Serial.println("");
+  
 #if defined(ESP32)
   BLEAdvertisementData advData;
   advData.setFlags(0x06); // General Discoverable + BR/EDR Not Supported
