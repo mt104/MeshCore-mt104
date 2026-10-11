@@ -1,6 +1,10 @@
 #include "MyMesh.h"
 #include <algorithm>
 
+#if defined(ESP32) or defined(NRF52_PLATFORM)
+#include "helpers/BTHomeService.h"
+#endif
+
 /* ------------------------------ Config -------------------------------- */
 
 #ifndef LORA_FREQ
@@ -554,6 +558,9 @@ uint32_t MyMesh::getDirectRetransmitDelay(const mesh::Packet *packet) {
 }
 
 mesh::DispatcherAction MyMesh::onRecvPacket(mesh::Packet* pkt) {
+#if defined(ESP32) or defined(NRF52_PLATFORM)
+  bthomeService.incrementPacketCounter();
+#endif
   if (pkt->getRouteType() == ROUTE_TYPE_TRANSPORT_FLOOD) {
     recv_pkt_region = region_map.findMatch(pkt, REGION_DENY_FLOOD);
   } else if (pkt->getRouteType() == ROUTE_TYPE_FLOOD) {
