@@ -217,6 +217,16 @@ void BaseChatMesh::getPeerSharedSecret(uint8_t* dest_secret, int peer_idx) {
   }
 }
 
+bool BaseChatMesh::isBetterPath(mesh::Packet *packet, ContactInfo& from) {
+
+  /* Thoughts...
+  Extend ContactInfo to include metrics for evaluating path quality, such as signal strength, hop count, or latency.
+  Keep track of how many times we've received packets from this contact via this path to help evaluate its reliability.
+  */
+ 
+  return false;
+}
+
 void BaseChatMesh::onPeerDataRecv(mesh::Packet* packet, uint8_t type, int sender_idx, const uint8_t* secret, uint8_t* data, size_t len) {
   int i = matching_peer_indexes[sender_idx];
   if (i < 0 || i >= num_contacts) {
@@ -245,7 +255,7 @@ void BaseChatMesh::onPeerDataRecv(mesh::Packet* packet, uint8_t type, int sender
       ack_hash[4] = data[5 + text_len + 1];
       getRNG()->random(&ack_hash[5], 1);  // make 6th byte random
 
-      if (packet->isRouteFlood()) {
+      if (packet->isRouteFlood() || isBetterPath(packet, from)) {
         // let this sender know path TO here, so they can use sendDirect(), and ALSO encode the ACK
         mesh::Packet* path = createPathReturn(from.id, secret, packet->path, packet->path_len,
                                                 PAYLOAD_TYPE_ACK, (uint8_t *) &ack_hash, 6);
