@@ -826,21 +826,13 @@ void CommonCLI::handleSetCmd(uint32_t sender_timestamp, char* command, char* rep
       config += 9; // skip "wifi.ssid"
       while (*config == ' ') config++; // skip any leading spaces
       WiFiHelper.updateSSID(config);
-      if (WiFiHelper.save()) {
-        sprintf(reply, "OK");
-      } else {
-        strcpy(reply, "Error: failed to save WiFi config");
-      }
+      sprintf(reply, "OK");
     } else if (memcmp(config, "wifi.password", 13) == 0) {
       config += 13; // skip "wifi.password"
       while (*config == ' ') config++; // skip any leading spaces
       WiFiHelper.updatePassphrase(config);
-      if (WiFiHelper.save()) {
-        sprintf(reply, "OK");
-      } else {
-        strcpy(reply, "Error: failed to save WiFi config");
-      }
-  #endif
+      sprintf(reply, "OK");
+#endif
   } else {
     strcpy(reply, "unknown config: ");
     StrHelper::strncpy(&reply[16], config, 160-17);

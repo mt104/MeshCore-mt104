@@ -52,6 +52,8 @@ bool TagHelperClass::load() {
       if (equalsIndex > 0) {
         String tag = line.substring(0, equalsIndex);
         String value = line.substring(equalsIndex + 1);
+        // Remove trailing newline or carriage return characters from value
+        value.trim();
         setValue(const_cast<char*>(tag.c_str()), const_cast<char*>(value.c_str()));
       }
     }
@@ -117,10 +119,10 @@ void TagHelperClass::setValue(char *tag, char *value) {
 void TagHelperClass::listToSerial() {
   TagValue *current = _firstTagValue;
   while (current) {
-    Serial.print("Tag: ");
     Serial.print(current->tag);
-    Serial.print(", Value: ");
-    Serial.println(current->value);
+    Serial.print(" = \"");
+    Serial.print(current->value);
+    Serial.println("\"");
     current = current->next;
   }
 }
