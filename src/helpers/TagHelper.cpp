@@ -7,6 +7,7 @@ TagValue* _firstTagValue = nullptr;
 
 void TagHelperClass::setFilesystem(FILESYSTEM *fs) {
   _fs = fs;
+  tagHelper.load(); // Load existing tag values from the filesystem
 }
 
 bool TagHelperClass::save() {
@@ -19,10 +20,16 @@ bool TagHelperClass::save() {
   File file = _fs->open(_filenameTagValue, "w", true);
 #endif
   if (file) {
-    /*
-    bool success = (file.write((const uint8_t *)_ssid, sizeof(_ssid)) == sizeof(_ssid));
-    success = success && (file.write((const uint8_t *)_passphrase, sizeof(_passphrase)) == sizeof(_passphrase));
-    */
+    // Iterate through the tags, writing one per line, in the format "tag=value\n"
+    TagValue *current = _firstTagValue;
+    while (current) {
+      if (current->tag && current->value) {
+        file.print(current->tag);
+        file.print('=');
+        file.println(current->value);
+      }
+      current = current->next;
+    }
     file.close();
     return true;
   }
@@ -38,12 +45,16 @@ bool TagHelperClass::load() {
   File file = _fs->open(_filenameTagValue, "r", true);
 #endif
   if (file) {
-    /*
-    size_t ssid_len = file.read((uint8_t *)_ssid, sizeof(_ssid));
-    size_t passphrase_len = file.read((uint8_t *)_passphrase, sizeof(_passphrase));
-    file.close();
-    WiFi.begin(_ssid, _passphrase);
-    */
+    // Read the file line by line, parsing each line into a tag and value
+    while (file.available()) {
+      String line = file.readStringUntil('\n');
+      int equalsIndex = line.indexOf('=');
+      if (equalsIndex > 0) {
+        String tag = line.substring(0, equalsIndex);
+        String value = line.substring(equalsIndex + 1);
+        setValue(const_cast<char*>(tag.c_str()), const_cast<char*>(value.c_str()));
+      }
+    }
     file.close();
     return true;
   }
@@ -96,6 +107,10 @@ void TagHelperClass::setValue(char *tag, char *value) {
   if (!current->value || strcmp(current->value, value) != 0) {
     current->value = strdup(value);
     current->dirty = true;
+  }
+  if (current->dirty) {
+    save(); // Save to filesystem if the value has changed
+    current->dirty = false;
   }
 }
 
