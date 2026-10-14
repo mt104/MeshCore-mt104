@@ -1,5 +1,5 @@
 #include "Mesh.h"
-//#include <Arduino.h>
+#include <Arduino.h>
 
 namespace mesh {
 
@@ -103,19 +103,64 @@ DispatcherAction Mesh::onRecvPacket(Packet* pkt) {
 
       if (!_tables->wasSeen(pkt)) {
         _tables->markSeen(pkt);
-        //Serial.printf("DEBUG_MARKT: Preparing to forward\r\n");
-        //Serial.printf("DEBUG_MARKT: Before removing self from path\r\n");
-        //pkt->debugToSerial(pkt);
-        int maxRemove = 10; // TODO: Make this configurable?
-        int removeCount = 0;
-        while (!self_id.isHashMatch(pkt->path, pkt->getPathHashSize()) && removeCount < maxRemove) {
+
+        char debug[200];
+        // Are we next in the path?
+        if (self_id.isHashMatch(pkt->path, pkt->getPathHashSize())) {
+          // Yes, so remove first hash from path
+
+          sprintf(debug, "Before: ");
+          for (int j = 0; j < pkt->getPathHashCount(); j++) {
+            char hex[3];
+            sprintf(hex, "%02X ", pkt->path[j * pkt->getPathHashSize()]);
+            strcat(debug, hex);
+          }
+          Serial.printf("normal: %s\r\n", debug);
+          syslogDebug("Mesh::onRecvPacket normal", debug);
+
           removeSelfFromPath(pkt);
-          removeCount++;
+
+          sprintf(debug, "After: ");
+          for (int j = 0; j < pkt->getPathHashCount(); j++) {
+            char hex[3];
+            sprintf(hex, "%02X ", pkt->path[j * pkt->getPathHashSize()]);
+            strcat(debug, hex);
+          }
+          Serial.printf("normal: %s\r\n", debug);
+          syslogDebug("Mesh::onRecvPacket normal", debug);
+
+        } else {
+          // No, so remove all hashes up to and including our hash
+
+          sprintf(debug, "Before: ");
+          for (int j = 0; j < pkt->getPathHashCount(); j++) {
+            char hex[3];
+            sprintf(hex, "%02X ", pkt->path[j*pkt->getPathHashSize()]);
+            strcat(debug, hex);
+          }
+          Serial.printf("path shortcut: %s\r\n", debug);
+          syslogDebug("Mesh::onRecvPacket path shortcut", debug);
+
+          int maxRemove = 10; // TODO: Make this configurable?
+          int removeCount = 0;
+          while (!self_id.isHashMatch(pkt->path, pkt->getPathHashSize()) && removeCount < maxRemove) {
+            removeSelfFromPath(pkt);
+            removeCount++;
+          }
+          removeSelfFromPath(pkt);
+
+          sprintf(debug, "After: ");
+          for (int j = 0; j < pkt->getPathHashCount(); j++) {
+            char hex[3];
+            sprintf(hex, "%02X ", pkt->path[j * pkt->getPathHashSize()]);
+            strcat(debug, hex);
+          }
+          Serial.printf("path shortcut: %s\r\n", debug);
+          syslogDebug("Mesh::onRecvPacket path shortcut", debug);
         }
-        removeSelfFromPath(pkt);
-        //Serial.printf("DEBUG_MARKT: After removing self from path\r\n");
+
         //pkt->debugToSerial(pkt);
-        //Serial.printf("DEBUG_MARKT: Forwarding\r\n");
+
         uint32_t d = getDirectRetransmitDelay(pkt);
         return ACTION_RETRANSMIT_DELAYED(0, d);  // Routed traffic is HIGHEST priority 
       }
