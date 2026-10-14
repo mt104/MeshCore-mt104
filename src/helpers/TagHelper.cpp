@@ -5,6 +5,9 @@ static FILESYSTEM *_fs = nullptr;
 const char *_filenameTagValue = "/taghelper.config";
 TagValue* _firstTagValue = nullptr;
 
+// Linked list of registered callbacks for tag value changes
+static TagChangedCallbackNode* _firstCallbackNode = nullptr;
+
 void TagHelperClass::setFilesystem(FILESYSTEM *fs) {
   _fs = fs;
   tagHelper.load(); // Load existing tag values from the filesystem
@@ -113,6 +116,8 @@ void TagHelperClass::setValue(char *tag, char *value) {
   if (current->dirty) {
     save(); // Save to filesystem if the value has changed
     current->dirty = false;
+    // Notify anyone that cares that the tag value has changed
+    notifyTagChanged(tag, value);
   }
 }
 
@@ -145,6 +150,27 @@ void TagHelperClass::listToSerial() {
     Serial.print(" = \"");
     Serial.print(current->value);
     Serial.println("\"");
+    current = current->next;
+  }
+}
+
+void TagHelperClass::registerCallback(TagChangedCallback callback, const char *tagFilter) {
+  TagChangedCallbackNode *newNode = new TagChangedCallbackNode();
+  newNode->callback = callback;
+  if (tagFilter) {
+    newNode->tagFilter = strdup(tagFilter);
+  }
+  newNode->next = _firstCallbackNode;
+  _firstCallbackNode = newNode;
+}
+
+// When a tag value changes, call all registered callbacks that match the tag
+void TagHelperClass::notifyTagChanged(const char *tag, const char *value) {
+  TagChangedCallbackNode *current = _firstCallbackNode;
+  while (current) {
+    if (!current->tagFilter || strcmp(current->tagFilter, tag) == 0) {
+      current->callback(tag, value);
+    }
     current = current->next;
   }
 }

@@ -107,6 +107,11 @@ void setup() {
 #else
   #error "need to define filesystem"
 #endif
+  /*
+  tagHelper.registerCallback([](const char* tag, const char* value) {
+    Serial.printf("Tag changed: %s = %s\n", tag, value);
+  }, nullptr);
+  */
   tagHelper.setFilesystem(fs);
 
   if (!store.load("_main", the_mesh.self_id)) {
