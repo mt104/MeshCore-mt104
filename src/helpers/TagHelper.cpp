@@ -116,6 +116,28 @@ void TagHelperClass::setValue(char *tag, char *value) {
   }
 }
 
+void TagHelperClass::forget(char *tag) {
+  TagValue *current = _firstTagValue;
+  TagValue *prev = nullptr;
+  while (current) {
+    if (strcmp(current->tag, tag) == 0) {
+      // Found the tag to forget
+      if (prev) {
+        prev->next = current->next;
+      } else {
+        _firstTagValue = current->next;
+      }
+      free(current->tag);
+      free(current->value);
+      delete current;
+      save(); // Save to filesystem after forgetting the tag
+      return;
+    }
+    prev = current;
+    current = current->next;
+  }
+}
+
 void TagHelperClass::listToSerial() {
   TagValue *current = _firstTagValue;
   while (current) {

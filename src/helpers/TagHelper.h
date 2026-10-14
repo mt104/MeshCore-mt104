@@ -19,6 +19,7 @@ public:
   TagValue *get(char *tag);
   char *getValue(char *tag, char *defaultValue = nullptr);
   void setValue(char *tag, char *value);
+  void forget(char *tag);
   void listToSerial();
 };
 

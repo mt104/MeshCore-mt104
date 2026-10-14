@@ -65,8 +65,8 @@ void WiFiHelperClass::forget() {
   WiFi.disconnect();
   _ssid[0] = '\0';
   _passphrase[0] = '\0';
-  tagHelper.setValue("wifi.ssid", "");
-  tagHelper.setValue("wifi.passphrase", "");
+  tagHelper.forget("wifi.ssid");
+  tagHelper.forget("wifi.passphrase");
 }
 
 WiFiClass WiFi;
