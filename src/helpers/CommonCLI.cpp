@@ -453,15 +453,23 @@ void CommonCLI::handleCommand(uint32_t sender_timestamp, char* command, char* re
       WiFiHelper.forget();
       strcpy(reply, "   WiFi credentials forgotten");
     } else if (memcmp(command, "syslog test", 11) == 0) {
-      syslogSsend(1, 6, "test", "Syslog test message");
-      strcpy(reply, "   Syslog test sent");
+      if (syslogIsRunning()) {
+        syslogSsend(1, 6, "test", "Syslog test message");
+        strcpy(reply, "   Syslog test sent");
+      } else {
+        strcpy(reply, "   Syslog not running");
+      }
+    } else if (memcmp(command, "syslog off", 8) == 0) {
+      strcpy(reply, "   Syslog disabled");
+      tagHelper.forget("syslog.server");
+      syslogBegin();
+    } else if (strncmp(command, "syslog server ", 13) == 0) {
+      char* server = &command[14];
+      tagHelper.setValue("syslog.server", server);
+      syslogBegin();
+      strcpy(reply, "   Syslog enabled");
 #endif
     } else if (memcmp(command, "tag list", 8) == 0) {
-      /*
-      tagHelper.setValue("tagValueTest1", "One");
-      tagHelper.setValue("tagValueTest2", "Two");
-      tagHelper.setValue("tagValueTest1", "One updated");
-      */
       tagHelper.listToSerial();
     } else {
       strcpy(reply, "Unknown command");
