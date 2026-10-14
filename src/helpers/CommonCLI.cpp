@@ -15,6 +15,8 @@
 #include "Syslog.h"
 #endif
 
+#include "TagHelper.h"
+
 // Believe it or not, this std C function is busted on some platforms!
 static uint32_t _atoi(const char* sp) {
   uint32_t n = 0;
@@ -454,6 +456,11 @@ void CommonCLI::handleCommand(uint32_t sender_timestamp, char* command, char* re
       syslogSsend(1, 6, "test", "Syslog test message");
       strcpy(reply, "   Syslog test sent");
 #endif
+    } else if (memcmp(command, "tag list", 8) == 0) {
+      tagHelper.setValue("tagValueTest1", "One");
+      tagHelper.setValue("tagValueTest2", "Two");
+      tagHelper.setValue("tagValueTest1", "One updated");
+      tagHelper.listToSerial();
     } else {
       strcpy(reply, "Unknown command");
     }

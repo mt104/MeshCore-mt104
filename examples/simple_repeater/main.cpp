@@ -26,6 +26,9 @@ WiFiHelperClass WiFiHelper;
 unsigned long last_bthome_send = 0;
 #endif
 
+#include "helpers/TagHelper.h"
+  TagHelperClass tagHelper;
+
   StdRNG fast_rng;
   SimpleMeshTables tables;
 
@@ -105,6 +108,7 @@ void setup() {
 #else
   #error "need to define filesystem"
 #endif
+  tagHelper.setFilesystem(fs);
 
   if (!store.load("_main", the_mesh.self_id)) {
     MESH_DEBUG_PRINTLN("Generating new keypair");
