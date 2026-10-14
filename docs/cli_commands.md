@@ -21,6 +21,7 @@ This document provides an overview of CLI commands that can be sent to MeshCore 
   - [Bridge](#bridge-when-bridge-support-is-compiled-in)
   - [Ethernet](#ethernet-when-ethernet-support-is-compiled-in)
   - [WiFi](#for-repeaters-that-support-wifi)
+  - [Syslog](#for-repeaters-that-support-wifi)
 
 
 ---
@@ -1228,3 +1229,26 @@ Ethernet support is available on RAK4631 boards with a RAK13800 (W5100S) Etherne
 - Any current WiFi connection will be disconnected.
 
 ---
+
+### Syslog (for repeaters that support WiFi)
+
+- Syslog is supported on boards that support WiFi.
+
+#### View syslog server
+**Usage:**
+- `syslog server`
+
+#### Configure syslog server
+**Usage:**
+- `syslog server <hostname or IP address>`
+
+#### Send a test syslog message
+**Usage:**
+- `syslog test`
+
+#### Disable syslog
+**Usage:**
+- `syslog off`
+
+---
+

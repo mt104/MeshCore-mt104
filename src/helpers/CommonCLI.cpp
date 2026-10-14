@@ -463,6 +463,13 @@ void CommonCLI::handleCommand(uint32_t sender_timestamp, char* command, char* re
       strcpy(reply, "   Syslog disabled");
       tagHelper.forget("syslog.server");
       syslogBegin();
+    } else if (memcmp(command, "syslog server", 13) == 0 && command[13] == 0) {
+      const char* server = tagHelper.getValue("syslog.server");
+      if (server != nullptr && strlen(server) > 0) {
+        sprintf(reply, "   Syslog enabled to %s", server);
+      } else {
+        strcpy(reply, "   Syslog disabled");
+      }
     } else if (strncmp(command, "syslog server ", 13) == 0) {
       char* server = &command[14];
       tagHelper.setValue("syslog.server", server);
