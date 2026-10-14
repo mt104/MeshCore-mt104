@@ -3,6 +3,7 @@
 #if defined(ESP32)
 #include <WiFi.h>
 #include <WiFiUdp.h>
+#include "TagHelper.h"
 
 WiFiUDP udpSyslog;
 
@@ -10,24 +11,59 @@ char syslogServer[64] = "";  // assuming a maximum length for the server hostnam
 char syslogSource[64] = "";  // assuming a maximum length for the source hostname or IP
 
 bool _doneBegin = false;
-void syslogBegin(const char* server, const char* source) {
+void syslogBegin() {
+    // If we're already started, finish the previous UDP connection
+    if (_doneBegin) {
+        udpSyslog.stop();
+        _doneBegin = false;
+    }
+
     // Silently fail if WiFi is not connected
     if (WiFi.status() != WL_CONNECTED) {
         return;
     }
-    strncpy(syslogServer, server, sizeof(syslogServer) - 1);
+
+    // Get server from TagHelper
+    char *serverFromTag = tagHelper.getValue("syslog.server");
+    if (serverFromTag == nullptr || strlen(serverFromTag) == 0) {
+        // silently fail if no server is configured
+        return;
+    }
+    if (strcmp(serverFromTag, "off") == 0) {
+        // syslog is disabled
+        return;
+    }
+    strncpy(syslogServer, serverFromTag, sizeof(syslogServer) - 1);
     syslogServer[sizeof(syslogServer) - 1] = '\0';
-    strncpy(syslogSource, source, sizeof(syslogSource) - 1);
+
+    char *source = (char *)WiFi.localIP().toString().c_str();
+     strncpy(syslogSource, source, sizeof(syslogSource) - 1);
     syslogSource[sizeof(syslogSource) - 1] = '\0';
     udpSyslog.begin(514);  // standard syslog port
     _doneBegin = true;
+    syslogSsend(1, 6, "init", "Syslog started");
+}
+
+bool syslogIsRunning() {
+    return _doneBegin;
 }
 
 void syslogSsend(uint8_t facility, uint8_t severity, const char *tag, const char *message) {
-  // Silently fail if WiFi is not connected or we didn't begin syslog
-  if (WiFi.status() != WL_CONNECTED || !_doneBegin) {
-      return;
+  // Silently fail if WiFi is not connected
+  if (WiFi.status() != WL_CONNECTED) {
+    return;
   }
+
+  // Make sure we've started the UDP connection
+  if (!_doneBegin) {
+    syslogBegin();
+  }
+
+  // Silently fail if we still haven't begun
+  if (!_doneBegin) {
+    return;
+  }
+
   // Calculate Syslog Priority (PRI)
   uint8_t pri = (facility * 8) + severity;
 
