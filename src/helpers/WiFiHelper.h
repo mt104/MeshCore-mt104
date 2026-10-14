@@ -22,8 +22,8 @@ public:
   void updatePassphrase(const char *passphrase);
   char *getConfiguredSSID();
   char *getConfiguredPassphrase();
-  bool save();
-  bool load();
+  bool start();
+  bool _maybeStartWiFi();
   bool shouldInhibitSleep();
   void forget();
 };

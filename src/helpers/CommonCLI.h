@@ -6,6 +6,7 @@
 #include <helpers/ClientACL.h>
 #include <helpers/RegionMap.h>
 #include <helpers/ConfigSerializer.h>
+#include <helpers/TagHelper.h>
 
 #if defined(WITH_RS232_BRIDGE) || defined(WITH_ESPNOW_BRIDGE)
 #define WITH_BRIDGE
@@ -274,7 +275,7 @@ public:
   CommonCLI(mesh::MainBoard& board, mesh::RTCClock& rtc, SensorManager& sensors, RegionMap& region_map, ClientACL& acl, NodePrefs* prefs, CommonCLICallbacks* callbacks)
       : _board(&board), _rtc(&rtc), _sensors(&sensors), _region_map(&region_map), _acl(&acl), _prefs(prefs), _callbacks(callbacks) { }
 
-  void loadPrefs(FILESYSTEM* _fs);
+  void loadPrefs(FILESYSTEM *_fs);
   bool savePrefs(FILESYSTEM* _fs);
   void handleCommand(uint32_t sender_timestamp, char* command, char* reply);
   uint8_t buildAdvertData(uint8_t node_type, uint8_t* app_data);

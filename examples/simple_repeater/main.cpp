@@ -26,6 +26,9 @@ WiFiHelperClass WiFiHelper;
 unsigned long last_bthome_send = 0;
 #endif
 
+#include "helpers/TagHelper.h"
+  TagHelperClass tagHelper;
+
   StdRNG fast_rng;
   SimpleMeshTables tables;
 
@@ -105,6 +108,7 @@ void setup() {
 #else
   #error "need to define filesystem"
 #endif
+  tagHelper.setFilesystem(fs);
 
   if (!store.load("_main", the_mesh.self_id)) {
     MESH_DEBUG_PRINTLN("Generating new keypair");
@@ -139,7 +143,6 @@ void setup() {
 // add wifi interface
 #if defined(ESP32)
   board.setInhibitSleep(true); // Assume we need to inhibit sleep when WiFi is active
-  WiFi.setAutoReconnect(true);
   WiFi.onEvent([](WiFiEvent_t event, WiFiEventInfo_t info) {
     if (event == ARDUINO_EVENT_WIFI_STA_DISCONNECTED) {
       Serial.printf("WiFi disconnected. Flagging for reconnect...\r\n");
@@ -154,8 +157,7 @@ void setup() {
       wifi_needs_reconnect = false;
     }
   });
-  WiFiHelper.setFilesystem(fs);
-  WiFiHelper.load();
+  WiFiHelper.start();
   board.setInhibitSleep(WiFiHelper.shouldInhibitSleep()); // Update sleep inhibition based on WiFi configuration
 #endif
 
