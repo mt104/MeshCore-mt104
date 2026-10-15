@@ -1,5 +1,6 @@
 #include "helpers/TagHelper.h"
 #include "IdentityStore.h"
+#include <Arduino.h>
 
 static FILESYSTEM *_fs = nullptr;
 const char *_filenameTagValue = "/taghelper.config";
