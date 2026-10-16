@@ -1,4 +1,5 @@
 #include "Syslog.h"
+#include "TagHelper.h"
 
 #if defined(ESP32)
 #include <WiFi.h>

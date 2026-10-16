@@ -112,15 +112,19 @@ MultiSerialInterface interface_manager;
   UITask ui_task(&board, &interface_manager);
 #endif
 
-StdRNG fast_rng;
-SimpleMeshTables tables;
-MyMesh the_mesh(radio_driver, fast_rng, rtc_clock, tables, store);
+#include "helpers/TagHelper.h"
+  TagHelperClass tagHelper;
 
-/* END GLOBAL OBJECTS */
+  StdRNG fast_rng;
+  SimpleMeshTables tables;
+  MyMesh the_mesh(radio_driver, fast_rng, rtc_clock, tables, store);
 
-void halt() {
-  while (1) ;
-}
+  /* END GLOBAL OBJECTS */
+
+  void halt() {
+    while (1)
+      ;
+  }
 
 /* WIFI RECONNECT TRACKERS */
 #ifdef ENABLE_WIFI_INTERFACE
@@ -180,6 +184,7 @@ void setup() {
 #elif defined(ESP32)
   SPIFFS.begin(true);
   store.begin();
+  tagHelper.setFilesystem(&SPIFFS);
   the_mesh.begin();
 #else
   #error "need to define filesystem"
