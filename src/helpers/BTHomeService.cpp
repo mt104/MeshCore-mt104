@@ -1,5 +1,9 @@
 #include "BTHomeService.h"
 
+#if defined(ESP32)
+#include <NimBLEDevice.h>
+#endif
+
 #if defined(ESP32) or defined(NRF52_PLATFORM)
 
 BTHomeService bthomeService;
@@ -16,6 +20,7 @@ void BTHomeService::init(const char *deviceName) {
   _name = strdup(deviceName);
 
 #if defined(ESP32)
+/*
   BLEDevice::init(_name);
 
   // Disable address privacy so the MAC remains static across advert cycles
@@ -31,6 +36,10 @@ void BTHomeService::init(const char *deviceName) {
   // Ensure scan responses are completely disabled so the entire 13-byte array goes out in a single primary
   // advertisement frame
   pAdvertising->setScanResponse(false);
+*/
+  NimBLEDevice::init(_name);
+  NimBLEServer *pServer = NimBLEDevice::createServer(); // Needed????
+  pAdvertising = NimBLEDevice::getAdvertising();
 #endif
 
 #if defined(NRF52_PLATFORM)
@@ -149,8 +158,34 @@ void BTHomeService::sendSensorData(uint8_t batteryPercent, uint16_t batteryVolta
   }
   removeFirstNeighbour();
 
+  // A long string to see if it breaks the advertisement payload
+  char longString[50];
+  memset(longString, 'A', sizeof(longString) - 1);
+  longString[sizeof(longString) - 1] = '\0';
+  payload[pos++] = 0x54;
+  payload[pos++] = strlen(longString);
+  for (int i = 0; i < strlen(longString); i++) {
+    payload[pos++] = longString[i];
+  }
+
 #if defined(ESP32)
+/*
   BLEAdvertisementData advData;
+  advData.setFlags(0x06); // General Discoverable + BR/EDR Not Supported
+
+  String payloadStr = "";
+  for (int i = 0; i < pos; i++) {
+    payloadStr += (char)payload[i];
+  }
+
+  advData.setServiceData(BLEUUID((uint16_t)0xFCD2), payloadStr.c_str());
+  advData.setName(_name);
+
+  pAdvertising->stop();
+  pAdvertising->setAdvertisementData(advData);
+  pAdvertising->start();
+*/
+  NimBLEAdvertisementData advData;
   advData.setFlags(0x06); // General Discoverable + BR/EDR Not Supported
 
   String payloadStr = "";

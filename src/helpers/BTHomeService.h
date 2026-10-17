@@ -3,9 +3,10 @@
 #include <Arduino.h>
 
 #if defined(ESP32)
-#include <BLEAdvertising.h>
-#include <BLEDevice.h>
-#include <BLEUtils.h>
+//#include <BLEAdvertising.h>
+//#include <BLEDevice.h>
+//#include <BLEUtils.h>
+#include <NimBLEDevice.h>
 #endif
 
 #if defined(NRF52_PLATFORM)
