@@ -17,6 +17,10 @@
 
 #include "TagHelper.h"
 
+#if defined(ESP32) or defined(NRF52_PLATFORM)
+#include "BTHomeService.h"
+#endif
+
 // Believe it or not, this std C function is busted on some platforms!
 static uint32_t _atoi(const char* sp) {
   uint32_t n = 0;
@@ -513,6 +517,20 @@ void CommonCLI::handleCommand(uint32_t sender_timestamp, char* command, char* re
       tagHelper.setValue("syslog.server", server);
       syslogBegin();
       strcpy(reply, "   Syslog enabled");
+#endif
+#if defined(ESP32) or defined(NRF52_PLATFORM)
+    } else if (memcmp(command, "bthome status", 13) == 0) {
+      if (bthomeService.isEnabled()) {
+        strcpy(reply, "   BTHome is enabled");
+      } else {
+        strcpy(reply, "   BTHome is disabled");
+      }
+    } else if (memcmp(command, "bthome on", 9) == 0) {
+      bthomeService.on();
+      strcpy(reply, "   BTHome enabled");
+    } else if (memcmp(command, "bthome off", 10) == 0) {
+      bthomeService.off();
+      strcpy(reply, "   BTHome disabled");
 #endif
     } else if (memcmp(command, "tag list", 8) == 0) {
       tagHelper.listToSerial();

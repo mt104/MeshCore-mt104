@@ -31,7 +31,11 @@ private:
   Neighbour neighbours[BTHOME_MAX_NEIGHBOURS];
 
 public:
+  void on();
+  void off();
+  bool isEnabled();
   void init(const char *deviceName);
+  void deinit();
   void resetPacketCounter();
   void incrementPacketCounter();
   void resetNeighboursSNR();

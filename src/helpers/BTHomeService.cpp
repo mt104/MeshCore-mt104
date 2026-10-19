@@ -2,18 +2,57 @@
 
 #if defined(ESP32) or defined(NRF52_PLATFORM)
 
+#include "TagHelper.h"
+
 BTHomeService bthomeService;
 
 char *_name = nullptr;
+bool _isEnabled = false;
+
+static char *keyIsEnabled = "bthome.enabled";
 
 #if defined(NRF52_PLATFORM)
 bool _bluefruitAdvertising = false;
 #endif
 
-void BTHomeService::init(const char *deviceName) {
-  if (isInitialized) return;
+void BTHomeService::on() {
+  if (isEnabled()) {
+    return;
+  }
+  tagHelper.setValue(keyIsEnabled, "1");
+  resetPacketCounter();
+  resetNeighboursSNR();
+  init(_name);
+}
 
+void BTHomeService::off() {
+  if (!isEnabled()) {
+    return;
+  }
+  tagHelper.setValue(keyIsEnabled, "0");
+  deinit();
+}
+
+bool BTHomeService::isEnabled() {
+  return _isEnabled;
+}
+
+void BTHomeService::init(const char *deviceName) {
+  // Store the device name for later use
+  if (_name != nullptr) {
+    free(_name);
+  }
   _name = strdup(deviceName);
+
+  // Initialise _isEnabled based on the value stored in tagHelper, needed for first call
+  _isEnabled = strcmp(tagHelper.getValue(keyIsEnabled, "1"), "1") == 0;
+
+  // If the service is not enabled, we should not proceed with initialization
+  if (!isEnabled()) {
+    return;
+  }
+
+  if (isInitialized) return;
 
 #if defined(ESP32)
   BLEDevice::init(_name);
@@ -42,6 +81,22 @@ void BTHomeService::init(const char *deviceName) {
   resetPacketCounter();
   resetNeighboursSNR();
   isInitialized = true;
+}
+
+// Opposite of init
+void BTHomeService::deinit() {
+  if (!isEnabled()) return;
+
+#if defined(ESP32)
+  BLEDevice::deinit();
+#endif
+
+#if defined(NRF52_PLATFORM)
+  Bluefruit.end();
+#endif
+
+  isInitialized = false;
+  _isEnabled = false;
 }
 
 void BTHomeService::resetPacketCounter() {
@@ -94,6 +149,9 @@ void BTHomeService::updateNeighboursSNR(uint8_t from, float snr) {
 }
 
 void BTHomeService::sendSensorData(uint8_t batteryPercent, uint16_t batteryVoltage, int8_t noiseFloor) {
+
+  if (!isEnabled()) return;
+
 #if defined(ESP32)
   if (!isInitialized) init("MeshCore-Sensor");
 #endif
