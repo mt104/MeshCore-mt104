@@ -21,7 +21,8 @@ This document provides an overview of CLI commands that can be sent to MeshCore 
   - [Bridge](#bridge-when-bridge-support-is-compiled-in)
   - [Ethernet](#ethernet-when-ethernet-support-is-compiled-in)
   - [WiFi](#for-repeaters-that-support-wifi)
-  - [Syslog](#for-repeaters-that-support-wifi)
+  - [Syslog](#syslog)
+  - [BTHome](#bthome)
 
 
 ---
@@ -1235,7 +1236,7 @@ Ethernet support is available on RAK4631 boards with a RAK13800 (W5100S) Etherne
 
 ---
 
-### Syslog (for repeaters that support WiFi)
+### Syslog (#syslog)
 
 - Syslog is supported on boards that support WiFi.
 
@@ -1254,6 +1255,20 @@ Ethernet support is available on RAK4631 boards with a RAK13800 (W5100S) Etherne
 #### Disable syslog
 **Usage:**
 - `syslog off`
+
+---
+
+### BTHome (#bthome)
+
+- BTHome is supported on boards that support Bluetooth. Sends information via Bluetooth LE advertisments in BTHome format. Advertises noise floor, battery voltage, battery percent estimate, and SNR data for recevied packets.
+
+#### View BTHome status
+**Usage:**
+- `bthome status`
+
+#### Enable or disable BTHome
+**Usage:**
+- `bthome on|off`
 
 ---
 
