@@ -244,7 +244,7 @@ void CommonCLI::handleCommand(uint32_t sender_timestamp, char* command, char* re
       } else {
         strcpy(reply, "(ERR: clock cannot go backwards)");
       }
-    } else if (memcmp(command, "neighbors", 9) == 0) {
+    } else if (memcmp(command, "neighbors", 9) == 0 || memcmp(command, "neighbours", 10) == 0) {
       _callbacks->formatNeighborsReply(reply);
     } else if (memcmp(command, "neighbor.remove ", 16) == 0) {
       const char* hex = &command[16];
