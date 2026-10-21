@@ -92,7 +92,7 @@ void BTHomeService::deinit() {
 #endif
 
 #if defined(NRF52_PLATFORM)
-  Bluefruit.end();
+  Bluefruit.Advertising.stop();
 #endif
 
   isInitialized = false;
