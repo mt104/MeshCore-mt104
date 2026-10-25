@@ -105,6 +105,7 @@ class HomeScreen : public UIScreen {
 #ifndef UI_NO_HIBERNATE
     SHUTDOWN,
 #endif
+    BTHOME,
     Count    // keep as last
   };
 
@@ -122,6 +123,7 @@ class HomeScreen : public UIScreen {
   uint32_t discovery_req_time = 0;
   bool discovery_disp_names = true; // by default desplay names if available (removes SNR_O)
 #endif
+  bool _bthome_watcher_active = false;
 
   void renderBatteryIndicator(DisplayDriver& display, uint16_t batteryMilliVolts) {
     // Convert millivolts to percentage
@@ -251,6 +253,13 @@ public:
   int render(DisplayDriver& display) override {
     display.setColor(UIColor::title_bkg);
     display.fillRect(0, 0, display.width(), 12);
+
+    // Mayeb turn off BTHome watcher if not needed
+    if (_bthome_watcher_active && _page != HomePage::BTHOME) {
+      //TODO: Turn off BTHome watcher here!
+      _bthome_watcher_active = false;
+    }
+
     char tmp[80];
     // node name
     display.setTextSize(1);
@@ -554,6 +563,15 @@ public:
         display.drawTextCentered(display.width() / 2, 64 - 11, "hibernate:" PRESS_LABEL);
       }
 #endif
+    } else if (_page == HomePage::BTHOME) {
+      if (!_bthome_watcher_active) {
+        //TODO: Turn on BTHome watcher here!
+        _bthome_watcher_active = true;
+      }
+      display.setColor(UIColor::primary_txt);
+      display.setTextSize(1);
+      display.setCursor(0, 20);
+      display.print("Show BTHome here!");
     }
     return 5000;   // next render after 5000 ms
   }
