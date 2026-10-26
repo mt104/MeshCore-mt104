@@ -27,11 +27,11 @@ public:
         if (func_len > 0) {
           const uint8_t *data = (const uint8_t *)serviceData.data();
 
-          sprintf(_result, "Num Received: %lu\nRSSI: %d dBm\nPayload len: %d", _num_received,
-                  advertisedDevice.getRSSI(), serviceData.length());
+          // sprintf(_result, "Num Received: %lu\nRSSI: %d dBm\nPayload len: %d", _num_received,
+          //         advertisedDevice.getRSSI(), serviceData.length());
 
           // Pass the payload directly (ESP32 already strips the 2-byte UUID prefix)
-          // parseBTHomePayload(data, func_len);
+          BTHomeWatcher::parseBTHomePayload(data, func_len);
         }
       }
     }
@@ -121,3 +121,14 @@ void BTHomeWatcher::scan_callback(ble_gap_evt_adv_report_t *report) {
   Bluefruit.Scanner.resume();
 }
 #endif
+
+void BTHomeWatcher::parseBTHomePayload(const uint8_t *data, uint16_t len) {
+  // Implement the parsing of the BTHome payload here
+  // Example: Print the payload as hex
+  sprintf(_result, "Payload: ");
+  for (size_t i = 0; i < len; i++) {
+    char hex[3];
+    sprintf(hex, "%02X", data[i]);
+    strcat(_result, hex);
+  }
+}
