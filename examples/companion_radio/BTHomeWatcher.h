@@ -1,8 +1,9 @@
 #include <Arduino.h>
 
-#if defined(ESP32)
-#include <BLEAdvertising.h>
+#ifdef ESP32
+#include <BLEAdvertisedDevice.h>
 #include <BLEDevice.h>
+#include <BLEScan.h>
 #include <BLEUtils.h>
 #endif
 
@@ -16,5 +17,9 @@ public:
   void end();
 //  static void parseBTHomePayload(const uint8_t *payload, uint16_t length);
   int getDebugFuncLen();
+
+  #ifdef NRF52_PLATFORM
   static void scan_callback(ble_gap_evt_adv_report_t *report);
+  #endif
+
 };

@@ -3,32 +3,59 @@
 bool _done_first_begin = false;
 int _debug_func_len = -1;
 
-void BTHomeWatcher::begin() {
-  // Initialize Bluefruit
-  ////Bluefruit.begin();
-  ////Bluefruit.setTxPower(4); // Set max power (+4dBm)
-  ////Bluefruit.setName("nRF52-BTHome-Listener");
+#ifdef ESP32
+class BTHomeAdvertisedDeviceCallbacks : public BLEAdvertisedDeviceCallbacks {
+  void onResult(BLEAdvertisedDevice advertisedDevice) {
+    //BTHomeWatcher::scan_callback(advertisedDevice);
+    _debug_func_len++;
+  }
+};
 
-  // Configure Scanner settings
+BLEScan *pBLEScan = nullptr;
+#endif
+
+void BTHomeWatcher::begin() {
   Serial.println("Starting BTHomeWatcher scan");
 
   if (!_done_first_begin) {
     Serial.println("Performing first-time initialization for BTHomeWatcher");
+#ifdef NRF52
     Bluefruit.Scanner.setRxCallback(scan_callback);
+#endif
+#ifdef ESP32
+    pBLEScan = BLEDevice::getScan();
+    pBLEScan->setAdvertisedDeviceCallbacks(new BTHomeAdvertisedDeviceCallbacks());
+    pBLEScan->setActiveScan(false);
+#endif
     _done_first_begin = true;
   }
+
+#ifdef NRF52
   Bluefruit.Scanner.restartOnDisconnect(true);
   Bluefruit.Scanner.setInterval(160, 80);
   Bluefruit.Scanner.useActiveScan(false); // Passive scanning saves power
   Bluefruit.Scanner.start(0); // 0 = Scan continuously without timeout
+#endif
+#ifdef ESP32
+  pBLEScan->start(0, nullptr, false);
+#endif
 }
 
 void BTHomeWatcher::end() {
-    Serial.println("Ending BTHomeWatcher scan");
-    Bluefruit.Scanner.stop();
+  Serial.println("Ending BTHomeWatcher scan");
+#ifdef NRF52
+  Bluefruit.Scanner.stop();
+#endif
+#ifdef ESP32
+    if (pBLEScan) {
+        pBLEScan->clearResults();
+    }
+#endif
 }
 
+#ifdef NRF52
 #include <bluefruit.h>
+#endif
 
 // BTHome v2 16-bit Service UUID
 const uint16_t BTHOME_UUID = 0x181C;
@@ -89,8 +116,8 @@ int BTHomeWatcher::getDebugFuncLen() {
     return _debug_func_len;
 }
 
+#ifdef NRF52
 void BTHomeWatcher::scan_callback(ble_gap_evt_adv_report_t* report) {
-
     uint8_t buffer[32];
     memset(buffer, 0, sizeof(buffer));
 
@@ -120,4 +147,4 @@ void BTHomeWatcher::scan_callback(ble_gap_evt_adv_report_t* report) {
     //Bluefruit.Scanner.start(0); // 0 = Scan continuously without timeout
     Bluefruit.Scanner.resume();
 }
-
+#endif

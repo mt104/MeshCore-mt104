@@ -127,7 +127,6 @@ class HomeScreen : public UIScreen {
   bool discovery_disp_names = true; // by default desplay names if available (removes SNR_O)
 #endif
   bool _bthome_watcher_active = false;
-  bool _bluetooth_state_before_bthome = false;
 
   void renderBatteryIndicator(DisplayDriver& display, uint16_t batteryMilliVolts) {
     // Convert millivolts to percentage
@@ -262,12 +261,6 @@ public:
     if (_bthome_watcher_active && _page != HomePage::BTHOME) {
       bthomeWatcher.end();
       _bthome_watcher_active = false;
-
-      if (_bluetooth_state_before_bthome) {
-        //_task->enableBluetooth();
-      } else {
-        //_task->disableBluetooth();
-      }
     }
 
     char tmp[80];
@@ -575,10 +568,6 @@ public:
 #endif
     } else if (_page == HomePage::BTHOME) {
       if (!_bthome_watcher_active) {
-        _bluetooth_state_before_bthome = _task->isBluetoothEnabled();
-        if (_bluetooth_state_before_bthome) {
-          //_task->disableBluetooth();
-        }
         bthomeWatcher.begin();
         _bthome_watcher_active = true;
       }
