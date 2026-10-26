@@ -258,15 +258,15 @@ public:
     display.setColor(UIColor::title_bkg);
     display.fillRect(0, 0, display.width(), 12);
 
-    // Mayeb turn off BTHome watcher if not needed
+    // Maybe turn off BTHome watcher if not needed
     if (_bthome_watcher_active && _page != HomePage::BTHOME) {
       bthomeWatcher.end();
       _bthome_watcher_active = false;
 
       if (_bluetooth_state_before_bthome) {
-        _task->enableBluetooth();
+        //_task->enableBluetooth();
       } else {
-        _task->disableBluetooth();
+        //_task->disableBluetooth();
       }
     }
 
@@ -577,7 +577,7 @@ public:
       if (!_bthome_watcher_active) {
         _bluetooth_state_before_bthome = _task->isBluetoothEnabled();
         if (_bluetooth_state_before_bthome) {
-          _task->disableBluetooth();
+          //_task->disableBluetooth();
         }
         bthomeWatcher.begin();
         _bthome_watcher_active = true;
@@ -585,7 +585,10 @@ public:
       display.setColor(UIColor::primary_txt);
       display.setTextSize(1);
       display.setCursor(0, 20);
-      display.print("Show BTHome here!");
+      char buf[32];
+      sprintf(buf, "Debug Func Len: %d", bthomeWatcher.getDebugFuncLen());
+      display.print(buf);
+      return 1000;
     }
     return 5000;   // next render after 5000 ms
   }

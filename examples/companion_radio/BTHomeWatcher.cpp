@@ -1,6 +1,7 @@
 #include "BTHomeWatcher.h"
 
 bool _done_first_begin = false;
+int _debug_func_len = -1;
 
 void BTHomeWatcher::begin() {
   // Initialize Bluefruit
@@ -84,31 +85,39 @@ void BTHomeWatcher::parseBTHomePayload(const uint8_t *payload, uint16_t length) 
 }
 */
 
-void BTHomeWatcher::scan_callback(ble_gap_evt_adv_report_t* report) {
+int BTHomeWatcher::getDebugFuncLen() {
+    return _debug_func_len;
+}
 
-    Serial.println("BTHomeWatcher scan callback triggered.");
+void BTHomeWatcher::scan_callback(ble_gap_evt_adv_report_t* report) {
 
     uint8_t buffer[32];
     memset(buffer, 0, sizeof(buffer));
 
     // Search the advertisement report for Service Data (Type 0x16)
     uint16_t func_len = Bluefruit.Scanner.parseReportByType(report, BLE_GAP_AD_TYPE_SERVICE_DATA, buffer, sizeof(buffer));
+    _debug_func_len = func_len;
 
     // Service data includes the 2-byte UUID prefix little-endian followed by the BTHome payload
     if (func_len > 2) {
         uint16_t extracted_uuid = (buffer[1] << 8) | buffer[0];
 
         if (extracted_uuid == BTHOME_UUID) {
+            /*
             char mac_str[18];
             sprintf(mac_str, "%02X:%02X:%02X:%02X:%02X:%02X",
                     report->peer_addr.addr[5], report->peer_addr.addr[4], report->peer_addr.addr[3],
                     report->peer_addr.addr[2], report->peer_addr.addr[1], report->peer_addr.addr[0]);
 
             Serial.printf("Found BTHome Device! MAC: %s, RSSI: %d dBm\n", mac_str, report->rssi);
+            */
             
             // Pass the payload starting right after the 2-byte UUID
             //parseBTHomePayload(&buffer[2], func_len - 2);
         }
     }
+
+    //Bluefruit.Scanner.start(0); // 0 = Scan continuously without timeout
+    Bluefruit.Scanner.resume();
 }
 
