@@ -17,6 +17,7 @@ public:
   void end();
   static void parseBTHomePayload(const uint8_t *payload, uint16_t length);
   char *getResult();
+  bool isScanning();
 
 #ifdef ESP32
   BLEScan &getScan();

@@ -2,6 +2,7 @@
 
 #define BTHOME_UUID 0xfcd2 // v2
 
+bool _is_scanning = false;
 bool _done_first_begin = false;
 char _result[256];
 unsigned long _num_received = 0;
@@ -64,6 +65,7 @@ void BTHomeWatcher::begin() {
     pBLEScan->setActiveScan(false);
 #endif
     _done_first_begin = true;
+    _is_scanning = true;
   }
 
 #ifdef NRF52_PLATFORM
@@ -88,6 +90,7 @@ void BTHomeWatcher::end() {
     pBLEScan->stop();
   }
 #endif
+  _is_scanning = false;
 }
 
 #ifdef NRF52_PLATFORM
@@ -96,6 +99,10 @@ void BTHomeWatcher::end() {
 
 char *BTHomeWatcher::getResult() {
   return _result;
+}
+
+bool BTHomeWatcher::isScanning() {
+  return _is_scanning;
 }
 
 #ifdef NRF52_PLATFORM

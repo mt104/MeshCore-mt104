@@ -1082,7 +1082,7 @@ void UITask::loop() {
       _auto_off = millis() + AUTO_OFF_MILLIS;
     }
 #endif
-    if (millis() > _auto_off) {
+    if ((millis() > _auto_off) and !bthomeWatcher.isScanning()) {
       _display->turnOff();
     }
 #endif
