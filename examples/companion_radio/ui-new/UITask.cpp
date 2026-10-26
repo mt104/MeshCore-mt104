@@ -7,6 +7,9 @@
   #include <WiFi.h>
 #endif
 
+#include "../BTHomeWatcher.h"
+BTHomeWatcher bthomeWatcher;
+
 #ifndef AUTO_OFF_MILLIS
   #define AUTO_OFF_MILLIS     15000   // 15 seconds
 #endif
@@ -257,7 +260,7 @@ public:
 
     // Mayeb turn off BTHome watcher if not needed
     if (_bthome_watcher_active && _page != HomePage::BTHOME) {
-      //TODO: Turn off BTHome watcher here!
+      bthomeWatcher.end();
       _bthome_watcher_active = false;
 
       if (_bluetooth_state_before_bthome) {
@@ -576,7 +579,7 @@ public:
         if (_bluetooth_state_before_bthome) {
           _task->disableBluetooth();
         }
-        //TODO: Turn on BTHome watcher here!
+        bthomeWatcher.begin();
         _bthome_watcher_active = true;
       }
       display.setColor(UIColor::primary_txt);
