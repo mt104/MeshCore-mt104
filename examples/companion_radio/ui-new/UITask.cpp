@@ -574,9 +574,7 @@ public:
       display.setColor(UIColor::primary_txt);
       display.setTextSize(1);
       display.setCursor(0, 20);
-      char buf[32];
-      sprintf(buf, "Debug Func Len: %d", bthomeWatcher.getDebugFuncLen());
-      display.print(buf);
+      display.print(bthomeWatcher.getResult());
       return 1000;
     }
     return 5000;   // next render after 5000 ms
