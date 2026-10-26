@@ -4,7 +4,7 @@
 
 bool _is_scanning = false;
 bool _done_first_begin = false;
-char _result[256];
+char _result[1024];
 unsigned long _num_received = 0;
 
 #ifdef ESP32
@@ -17,10 +17,10 @@ public:
 
   void onResult(BLEAdvertisedDevice advertisedDevice) {
     // Look for BTHome service UUID in the advertised device
-    if (advertisedDevice.haveServiceUUID()) {
+    if (advertisedDevice.haveServiceData()) {
       // Get payload from the advertised device
       BLEUUID serviceDataUUID = advertisedDevice.getServiceDataUUID();
-      if (true or serviceDataUUID.equals(BLEUUID((uint16_t)BTHOME_UUID))) {
+      if (serviceDataUUID.equals(BLEUUID((uint16_t)BTHOME_UUID))) {
         _num_received++;
         std::string serviceData = advertisedDevice.getServiceData();
         uint16_t func_len = serviceData.length();
@@ -28,8 +28,11 @@ public:
         if (func_len > 0) {
           const uint8_t *data = (const uint8_t *)serviceData.data();
 
-          // sprintf(_result, "Num Received: %lu\nRSSI: %d dBm\nPayload len: %d", _num_received,
-          //         advertisedDevice.getRSSI(), serviceData.length());
+          // Skip over the 0x40 prefix if present
+          if (data[0] == 0x40) {
+            data++;
+            func_len--;
+          }
 
           // Pass the payload directly (ESP32 already strips the 2-byte UUID prefix)
           BTHomeWatcher::parseBTHomePayload(data, func_len);
@@ -128,12 +131,70 @@ void BTHomeWatcher::scan_callback(ble_gap_evt_adv_report_t *report) {
 #endif
 
 void BTHomeWatcher::parseBTHomePayload(const uint8_t *data, uint16_t len) {
-  // Implement the parsing of the BTHome payload here
-  // Example: Print the payload as hex
-  sprintf(_result, "Payload: ");
-  for (size_t i = 0; i < len; i++) {
-    char hex[3];
-    sprintf(hex, "%02X", data[i]);
-    strcat(_result, hex);
+  sprintf(_result, "");
+
+  // Step through the payload and parse individual fields as needed
+  char buffer[256];
+  uint16_t index = 0;
+
+  while (index < (len - 1)) { // -1 to skip packet id
+    uint8_t field_type = data[index++];
+    switch (field_type) {
+      // Example case for a hypothetical field type
+      case 0x01: {
+        // Parse field of type 0x01 - Battery percentage
+        uint8_t battery_percentage = data[index++];
+        sprintf(buffer, "%d%% ", battery_percentage);
+        strcat(_result, buffer);
+        break;
+      }
+      case 0x02: {
+        // Parse field of type 0x02 - Temperature
+        int16_t temperature = (data[index] << 8) | data[index + 1];
+        index += 2;
+        sprintf(buffer, "%0.2fC ", temperature / 100.0);
+        strcat(_result, buffer);
+        break;
+      }
+      case 0x0c: {
+        // Parse field of type 0x0c - Voltage
+        uint16_t voltage = (data[index]) | (data[index + 1] << 8);
+        index += 2;
+        sprintf(buffer, "%dmV ", voltage);
+        strcat(_result, buffer);
+        break;
+      }
+      case 0x59: {
+        // Parse field of type 0x59 - Count
+        int8_t count = data[index++];
+        sprintf(buffer, "%d ", count);
+        strcat(_result, buffer);
+        break;
+      }
+      case 0x09: {
+        // Parse field of type 0x09 - Count
+        uint8_t count = data[index++];
+        sprintf(buffer, "%d ", count);
+        strcat(_result, buffer);
+        break;
+      }
+      case 0x53: {
+        // Parse field of type 0x53 - Text
+        uint8_t text_length = data[index++];
+        if (text_length > 30) text_length = 30; // Ensure we don't overflow the buffer
+        memcpy(buffer, &data[index], text_length);
+        buffer[text_length] = '\0';
+        index += text_length;
+        strcat(_result, "\"");
+        strcat(_result, buffer);
+        strcat(_result, "\" ");
+        break;
+      }
+      default:
+        // If we get here we can't safely handle the rest of the payload because we don't know how big this field is
+        sprintf(buffer, "\n?? 0x%02X, len %d, index %d\n", field_type, len, index);
+        strcat(_result, buffer);
+        return;
+    }
   }
 }
