@@ -127,6 +127,7 @@ class HomeScreen : public UIScreen {
   bool discovery_disp_names = true; // by default desplay names if available (removes SNR_O)
 #endif
   bool _bthome_watcher_active = false;
+  bool _bluetooth_active_before_bthome_watcher = false;
 
   void renderBatteryIndicator(DisplayDriver& display, uint16_t batteryMilliVolts) {
     // Convert millivolts to percentage
@@ -260,6 +261,9 @@ public:
     // Maybe turn off BTHome watcher if not needed
     if (_bthome_watcher_active && _page != HomePage::BTHOME) {
       bthomeWatcher.end();
+      if (!_bluetooth_active_before_bthome_watcher) {
+        _task->disableBluetooth();
+      }
       _bthome_watcher_active = false;
     }
 
@@ -568,6 +572,13 @@ public:
 #endif
     } else if (_page == HomePage::BTHOME) {
       if (!_bthome_watcher_active) {
+        _bluetooth_active_before_bthome_watcher = _task->isBluetoothEnabled();
+        if (!_bluetooth_active_before_bthome_watcher) {
+          _task->enableBluetooth();
+#ifdef ESP32
+          BLEDevice::init(""); // Initialize BLE if it wasn't active before
+#endif
+        }
         bthomeWatcher.begin();
         _bthome_watcher_active = true;
       }
