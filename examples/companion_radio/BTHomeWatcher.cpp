@@ -54,7 +54,7 @@ void BTHomeWatcher::begin() {
 
   if (!_done_first_begin) {
     Serial.println("Performing first-time initialization for BTHomeWatcher");
-#ifdef NRF52
+#ifdef NRF52_PLATFORM
     Bluefruit.Scanner.setRxCallback(scan_callback);
 #endif
 #ifdef ESP32
@@ -66,7 +66,7 @@ void BTHomeWatcher::begin() {
     _done_first_begin = true;
   }
 
-#ifdef NRF52
+#ifdef NRF52_PLATFORM
   Bluefruit.Scanner.restartOnDisconnect(true);
   Bluefruit.Scanner.setInterval(160, 80);
   Bluefruit.Scanner.useActiveScan(false); // Passive scanning saves power
@@ -79,7 +79,7 @@ void BTHomeWatcher::begin() {
 
 void BTHomeWatcher::end() {
   Serial.println("Ending BTHomeWatcher scan");
-#ifdef NRF52
+#ifdef NRF52_PLATFORM
   Bluefruit.Scanner.stop();
 #endif
 #ifdef ESP32
@@ -90,7 +90,7 @@ void BTHomeWatcher::end() {
 #endif
 }
 
-#ifdef NRF52
+#ifdef NRF52_PLATFORM
 #include <bluefruit.h>
 #endif
 
@@ -98,15 +98,13 @@ char *BTHomeWatcher::getResult() {
   return _result;
 }
 
-#ifdef NRF52
+#ifdef NRF52_PLATFORM
 void BTHomeWatcher::scan_callback(ble_gap_evt_adv_report_t *report) {
   uint8_t buffer[32];
   memset(buffer, 0, sizeof(buffer));
 
   // Search the advertisement report for Service Data (Type 0x16)
-  uint16_t func_len =
-      Bluefruit.Scanner.parseReportByType(report, BLE_GAP_AD_TYPE_SERVICE_DATA, buffer, sizeof(buffer));
-  _debug_func_len = func_len;
+  uint16_t func_len = Bluefruit.Scanner.parseReportByType(report, BLE_GAP_AD_TYPE_SERVICE_DATA, buffer, sizeof(buffer));
 
   // Service data includes the 2-byte UUID prefix little-endian followed by the BTHome payload
   if (func_len > 2) {
@@ -114,7 +112,7 @@ void BTHomeWatcher::scan_callback(ble_gap_evt_adv_report_t *report) {
 
     if (extracted_uuid == BTHOME_UUID) {
       // Pass the payload starting right after the 2-byte UUID
-      // parseBTHomePayload(&buffer[2], func_len - 2);
+      parseBTHomePayload(&buffer[2], (uint16_t)(func_len - 2));
     }
   }
 
