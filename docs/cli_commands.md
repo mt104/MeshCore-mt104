@@ -1260,7 +1260,7 @@ Ethernet support is available on RAK4631 boards with a RAK13800 (W5100S) Etherne
 
 ### BTHome (#bthome)
 
-- BTHome is supported on boards that support Bluetooth. Sends information via Bluetooth LE advertisments in BTHome format. Advertises noise floor, battery voltage, battery percent estimate, and SNR data for recevied packets.
+- BTHome is supported on boards that support Bluetooth. Sends information via Bluetooth LE advertisments in BTHome format. Advertises noise floor, battery voltage, battery percent estimate, and SNR data for recevied packets. The default interval is 20 seconds. On each interval the BTHome advertisment will be updated with the next inbound SNR source and value.
 
 #### View BTHome status
 **Usage:**
@@ -1269,6 +1269,10 @@ Ethernet support is available on RAK4631 boards with a RAK13800 (W5100S) Etherne
 #### Enable or disable BTHome
 **Usage:**
 - `bthome on|off`
+
+#### Get or set the BTHome interval
+**Usage:**
+- `bthome interval [num seconds]`
 
 ---
 
