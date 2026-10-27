@@ -185,9 +185,9 @@ void BTHomeWatcher::parseBTHomePayload(const uint8_t *data, uint16_t len) {
         memcpy(buffer, &data[index], text_length);
         buffer[text_length] = '\0';
         index += text_length;
-        strcat(_result, "\"");
+        strcat(_result, "\n");
         strcat(_result, buffer);
-        strcat(_result, "\" ");
+        strcat(_result, "\n");
         break;
       }
       default:
