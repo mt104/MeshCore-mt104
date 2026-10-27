@@ -7,6 +7,9 @@
   #include <WiFi.h>
 #endif
 
+#include "../BTHomeWatcher.h"
+BTHomeWatcher bthomeWatcher;
+
 #ifndef AUTO_OFF_MILLIS
   #define AUTO_OFF_MILLIS     15000   // 15 seconds
 #endif
@@ -105,6 +108,7 @@ class HomeScreen : public UIScreen {
 #ifndef UI_NO_HIBERNATE
     SHUTDOWN,
 #endif
+    BTHOME,
     Count    // keep as last
   };
 
@@ -122,6 +126,8 @@ class HomeScreen : public UIScreen {
   uint32_t discovery_req_time = 0;
   bool discovery_disp_names = true; // by default desplay names if available (removes SNR_O)
 #endif
+  bool _bthome_watcher_active = false;
+  bool _bluetooth_active_before_bthome_watcher = false;
 
   void renderBatteryIndicator(DisplayDriver& display, uint16_t batteryMilliVolts) {
     // Convert millivolts to percentage
@@ -251,6 +257,16 @@ public:
   int render(DisplayDriver& display) override {
     display.setColor(UIColor::title_bkg);
     display.fillRect(0, 0, display.width(), 12);
+
+    // Maybe turn off BTHome watcher if not needed
+    if (_bthome_watcher_active && _page != HomePage::BTHOME) {
+      bthomeWatcher.end();
+      if (!_bluetooth_active_before_bthome_watcher) {
+        _task->disableBluetooth();
+      }
+      _bthome_watcher_active = false;
+    }
+
     char tmp[80];
     // node name
     display.setTextSize(1);
@@ -554,6 +570,23 @@ public:
         display.drawTextCentered(display.width() / 2, 64 - 11, "hibernate:" PRESS_LABEL);
       }
 #endif
+    } else if (_page == HomePage::BTHOME) {
+      if (!_bthome_watcher_active) {
+        _bluetooth_active_before_bthome_watcher = _task->isBluetoothEnabled();
+        if (!_bluetooth_active_before_bthome_watcher) {
+          _task->enableBluetooth();
+#ifdef ESP32
+          BLEDevice::init(""); // Initialize BLE if it wasn't active before
+#endif
+        }
+        bthomeWatcher.begin();
+        _bthome_watcher_active = true;
+      }
+      display.setColor(UIColor::primary_txt);
+      display.setTextSize(1);
+      display.setCursor(0, 20);
+      display.print(bthomeWatcher.getResult());
+      return 1000;
     }
     return 5000;   // next render after 5000 ms
   }
@@ -1049,7 +1082,7 @@ void UITask::loop() {
       _auto_off = millis() + AUTO_OFF_MILLIS;
     }
 #endif
-    if (millis() > _auto_off) {
+    if ((millis() > _auto_off) and !bthomeWatcher.isScanning()) {
       _display->turnOff();
     }
 #endif
