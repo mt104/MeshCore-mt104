@@ -248,7 +248,7 @@ void loop() {
 
 #if defined(ESP32) or defined(NRF52_PLATFORM)
   // Send BTHome sensor data periodically
-  if (millis() - last_bthome_send >= BTHOME_INTERVAL_MS) {
+  if (millis() - last_bthome_send >= bthomeService.getIntervalSeconds() * 1000) {
     if (bthomeService.isEnabled()) {
       // Battery Voltage in millivolts
       float mv = board.getBattMilliVolts();

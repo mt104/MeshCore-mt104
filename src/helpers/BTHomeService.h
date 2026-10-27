@@ -34,6 +34,8 @@ public:
   void on();
   void off();
   bool isEnabled();
+  uint32_t getIntervalSeconds();
+  void setIntervalSeconds(uint32_t interval);
   void init(const char *deviceName);
   void deinit();
   void resetPacketCounter();

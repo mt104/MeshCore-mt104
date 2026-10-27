@@ -531,6 +531,16 @@ void CommonCLI::handleCommand(uint32_t sender_timestamp, char* command, char* re
     } else if (memcmp(command, "bthome off", 10) == 0) {
       bthomeService.off();
       strcpy(reply, "   BTHome disabled");
+    } else if (strcmp(command, "bthome interval") == 0) {
+      sprintf(reply, "   BTHome interval is %u seconds", bthomeService.getIntervalSeconds());
+    } else if (strncmp(command, "bthome interval ", 16) == 0) {
+      uint32_t interval = atoi(&command[16]);
+      if (interval < 1) {
+        strcpy(reply, "Error: interval must be at least 1 second");
+      } else {
+        bthomeService.setIntervalSeconds(interval);
+        strcpy(reply, "   BTHome interval set");
+      }
 #endif
     } else if (memcmp(command, "tag list", 8) == 0) {
       tagHelper.listToSerial();

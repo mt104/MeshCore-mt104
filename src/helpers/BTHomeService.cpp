@@ -8,6 +8,7 @@ BTHomeService bthomeService;
 
 char *_name = nullptr;
 bool _isEnabled = false;
+uint32_t _interval_seconds = 20;
 
 static char *keyIsEnabled = "bthome.enabled";
 
@@ -35,6 +36,14 @@ void BTHomeService::off() {
 
 bool BTHomeService::isEnabled() {
   return _isEnabled;
+}
+
+uint32_t BTHomeService::getIntervalSeconds() {
+  return _interval_seconds;
+}
+
+void BTHomeService::setIntervalSeconds(uint32_t interval) {
+  _interval_seconds = interval;
 }
 
 void BTHomeService::init(const char *deviceName) {
