@@ -11,6 +11,7 @@ bool _isEnabled = false;
 uint32_t _interval_seconds = 20;
 
 static char *keyIsEnabled = "bthome.enabled";
+static char *keyInterval = "bthome.interval";
 
 #if defined(NRF52_PLATFORM)
 bool _bluefruitAdvertising = false;
@@ -44,6 +45,9 @@ uint32_t BTHomeService::getIntervalSeconds() {
 
 void BTHomeService::setIntervalSeconds(uint32_t interval) {
   _interval_seconds = interval;
+  char buffer[10];
+  sprintf(buffer, "%u", interval);
+  tagHelper.setValue(keyInterval, buffer);
 }
 
 void BTHomeService::init(const char *deviceName) {
@@ -52,6 +56,9 @@ void BTHomeService::init(const char *deviceName) {
     free(_name);
   }
   _name = strdup(deviceName);
+
+  // Load the interval from tagHelper
+  _interval_seconds = atoi(tagHelper.getValue(keyInterval, "20"));
 
   // Initialise _isEnabled based on the value stored in tagHelper, needed for first call
   _isEnabled = strcmp(tagHelper.getValue(keyIsEnabled, "1"), "1") == 0;
