@@ -6,6 +6,7 @@ bool _is_scanning = false;
 bool _done_first_begin = false;
 char _result[1024];
 unsigned long _num_received = 0;
+char _device_name[256];
 
 #ifdef ESP32
 class BTHomeAdvertisedDeviceCallbacks : public BLEAdvertisedDeviceCallbacks {
@@ -16,6 +17,17 @@ public:
   BTHomeAdvertisedDeviceCallbacks(BLEScan *scanner) : _scanner(scanner) {}
 
   void onResult(BLEAdvertisedDevice advertisedDevice) {
+    if (advertisedDevice.haveName()) {
+      std::string deviceName = advertisedDevice.getName();
+      strncpy(_device_name, deviceName.c_str(), sizeof(_device_name) - 1);
+      _device_name[sizeof(_device_name) - 1] = '\0';
+    } else {
+        // Use MAC instead
+        std::string macAddress = advertisedDevice.getAddress().toString();
+        strncpy(_device_name, macAddress.c_str(), sizeof(_device_name) - 1);
+        _device_name[sizeof(_device_name) - 1] = '\0';
+    }
+
     // Look for BTHome service UUID in the advertised device
     if (advertisedDevice.haveServiceData()) {
       // Get payload from the advertised device
@@ -113,6 +125,21 @@ void BTHomeWatcher::scan_callback(ble_gap_evt_adv_report_t *report) {
   uint8_t buffer[32];
   memset(buffer, 0, sizeof(buffer));
 
+  if (Bluefruit.Scanner.parseReportByType(report, BLE_GAP_AD_TYPE_COMPLETE_LOCAL_NAME, buffer,
+                                          sizeof(buffer))) {
+    snprintf(_device_name, sizeof(_device_name), "%s", (char *)buffer);
+  }
+  // 2. Fall back to Short Local Name if complete name isn't present
+  else if (Bluefruit.Scanner.parseReportByType(report, BLE_GAP_AD_TYPE_SHORT_LOCAL_NAME, buffer,
+                                               sizeof(buffer))) {
+    snprintf(_device_name, sizeof(_device_name), "%s", (char *)buffer);
+  } else {
+    // Fall back to using MAC
+    snprintf(_device_name, sizeof(_device_name), "%02X:%02X:%02X:%02X:%02X:%02X",
+             report->peer_addr.addr[5], report->peer_addr.addr[4], report->peer_addr.addr[3],
+             report->peer_addr.addr[2], report->peer_addr.addr[1], report->peer_addr.addr[0]);
+  }
+
   // Search the advertisement report for Service Data (Type 0x16)
   uint16_t func_len = Bluefruit.Scanner.parseReportByType(report, BLE_GAP_AD_TYPE_SERVICE_DATA, buffer, sizeof(buffer));
 
@@ -121,8 +148,14 @@ void BTHomeWatcher::scan_callback(ble_gap_evt_adv_report_t *report) {
     uint16_t extracted_uuid = (buffer[1] << 8) | buffer[0];
 
     if (extracted_uuid == BTHOME_UUID) {
+      // Skip over the 0x40 prefix if present
+      uint8_t skip = 0;
+      if (buffer[2] == 0x40) {
+        skip = 1; // Skip the 0x40 prefix
+        func_len--;
+      }
       // Pass the payload starting right after the 2-byte UUID
-      parseBTHomePayload(&buffer[2], (uint16_t)(func_len - 2));
+      parseBTHomePayload(&buffer[2 + skip], (uint16_t)(func_len - 2));
     }
   }
 
@@ -131,7 +164,7 @@ void BTHomeWatcher::scan_callback(ble_gap_evt_adv_report_t *report) {
 #endif
 
 void BTHomeWatcher::parseBTHomePayload(const uint8_t *data, uint16_t len) {
-  sprintf(_result, "");
+  sprintf(_result, "%s\n", _device_name);
 
   // Step through the payload and parse individual fields as needed
   char buffer[256];
