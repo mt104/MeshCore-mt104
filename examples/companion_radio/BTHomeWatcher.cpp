@@ -133,6 +133,11 @@ void BTHomeWatcher::scan_callback(ble_gap_evt_adv_report_t *report) {
   else if (Bluefruit.Scanner.parseReportByType(report, BLE_GAP_AD_TYPE_SHORT_LOCAL_NAME, buffer,
                                                sizeof(buffer))) {
     snprintf(_device_name, sizeof(_device_name), "%s", (char *)buffer);
+  } else {
+    // Fall back to using MAC
+    snprintf(_device_name, sizeof(_device_name), "%02X:%02X:%02X:%02X:%02X:%02X",
+             report->peer_addr.addr[5], report->peer_addr.addr[4], report->peer_addr.addr[3],
+             report->peer_addr.addr[2], report->peer_addr.addr[1], report->peer_addr.addr[0]);
   }
 
   // Search the advertisement report for Service Data (Type 0x16)
