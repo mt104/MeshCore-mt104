@@ -1,4 +1,5 @@
 #include "Mesh.h"
+#include <target.h>
 //#include <Arduino.h>
 
 namespace mesh {
@@ -137,6 +138,11 @@ DispatcherAction Mesh::onRecvPacket(Packet* pkt) {
   }
 
   if (pkt->isRouteFlood() && filterRecvFloodPacket(pkt)) return ACTION_RELEASE;
+
+  // Ignore flood packets below a certain battery Voltage
+  if (pkt->isRouteFlood() && board.getBattMilliVolts() < 3600) { // Hard-coded for quick test at roughly 50% battery
+    return ACTION_RELEASE;
+  }
 
   DispatcherAction action = ACTION_RELEASE;
 
