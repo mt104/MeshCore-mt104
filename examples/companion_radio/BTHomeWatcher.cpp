@@ -6,6 +6,7 @@ bool _is_scanning = false;
 bool _done_first_begin = false;
 char _result[1024];
 unsigned long _num_received = 0;
+char _device_name[256];
 
 #ifdef ESP32
 class BTHomeAdvertisedDeviceCallbacks : public BLEAdvertisedDeviceCallbacks {
@@ -16,6 +17,17 @@ public:
   BTHomeAdvertisedDeviceCallbacks(BLEScan *scanner) : _scanner(scanner) {}
 
   void onResult(BLEAdvertisedDevice advertisedDevice) {
+    if (advertisedDevice.haveName()) {
+      std::string deviceName = advertisedDevice.getName();
+      strncpy(_device_name, deviceName.c_str(), sizeof(_device_name) - 1);
+      _device_name[sizeof(_device_name) - 1] = '\0';
+    } else {
+        // Use MAC instead
+        std::string macAddress = advertisedDevice.getAddress().toString();
+        strncpy(_device_name, macAddress.c_str(), sizeof(_device_name) - 1);
+        _device_name[sizeof(_device_name) - 1] = '\0';
+    }
+
     // Look for BTHome service UUID in the advertised device
     if (advertisedDevice.haveServiceData()) {
       // Get payload from the advertised device
@@ -131,7 +143,7 @@ void BTHomeWatcher::scan_callback(ble_gap_evt_adv_report_t *report) {
 #endif
 
 void BTHomeWatcher::parseBTHomePayload(const uint8_t *data, uint16_t len) {
-  sprintf(_result, "");
+  sprintf(_result, "%s\n", _device_name);
 
   // Step through the payload and parse individual fields as needed
   char buffer[256];
