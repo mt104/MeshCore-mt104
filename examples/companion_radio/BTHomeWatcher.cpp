@@ -125,6 +125,16 @@ void BTHomeWatcher::scan_callback(ble_gap_evt_adv_report_t *report) {
   uint8_t buffer[32];
   memset(buffer, 0, sizeof(buffer));
 
+  if (Bluefruit.Scanner.parseReportByType(report, BLE_GAP_AD_TYPE_COMPLETE_LOCAL_NAME, buffer,
+                                          sizeof(buffer))) {
+    snprintf(_device_name, sizeof(_device_name), "%s", (char *)buffer);
+  }
+  // 2. Fall back to Short Local Name if complete name isn't present
+  else if (Bluefruit.Scanner.parseReportByType(report, BLE_GAP_AD_TYPE_SHORT_LOCAL_NAME, buffer,
+                                               sizeof(buffer))) {
+    snprintf(_device_name, sizeof(_device_name), "%s", (char *)buffer);
+  }
+
   // Search the advertisement report for Service Data (Type 0x16)
   uint16_t func_len = Bluefruit.Scanner.parseReportByType(report, BLE_GAP_AD_TYPE_SERVICE_DATA, buffer, sizeof(buffer));
 
