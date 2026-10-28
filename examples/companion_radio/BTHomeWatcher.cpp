@@ -143,8 +143,14 @@ void BTHomeWatcher::scan_callback(ble_gap_evt_adv_report_t *report) {
     uint16_t extracted_uuid = (buffer[1] << 8) | buffer[0];
 
     if (extracted_uuid == BTHOME_UUID) {
+      // Skip over the 0x40 prefix if present
+      uint8_t skip = 0;
+      if (buffer[2] == 0x40) {
+        skip = 1; // Skip the 0x40 prefix
+        func_len--;
+      }
       // Pass the payload starting right after the 2-byte UUID
-      parseBTHomePayload(&buffer[2], (uint16_t)(func_len - 2));
+      parseBTHomePayload(&buffer[2 + skip], (uint16_t)(func_len - 2));
     }
   }
 
