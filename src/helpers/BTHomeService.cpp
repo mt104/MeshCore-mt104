@@ -91,7 +91,7 @@ void BTHomeService::init(const char *deviceName) {
 #if defined(NRF52_PLATFORM)
   // Initialize Bluefruit
   Bluefruit.begin();
-  Bluefruit.setTxPower(4); // Set transmit power (dBm)
+  Bluefruit.setTxPower(8); // Set transmit power (dBm)
 #endif
 
   resetPacketCounter();
