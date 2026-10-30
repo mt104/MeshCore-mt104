@@ -23,6 +23,7 @@ This document provides an overview of CLI commands that can be sent to MeshCore 
   - [WiFi](#for-repeaters-that-support-wifi)
   - [Syslog](#syslog)
   - [BTHome](#bthome)
+  - [Autopower](#autopower)
 
 
 ---
@@ -1273,6 +1274,20 @@ Ethernet support is available on RAK4631 boards with a RAK13800 (W5100S) Etherne
 #### Get or set the BTHome interval
 **Usage:**
 - `bthome interval [num seconds]`
+
+---
+
+### Autopower (autopower)
+
+- Autopower is intended to manage use of limited battery on solar nodes when there isn't enough to do everything all day every day.
+
+#### View Autopower status
+**Usage:**
+- `autopower`
+
+#### Set the battery Voltage (in mV) below which the repeater will stop forwarding flood packets (0 or off to disable)
+**Usage:**
+- `autopower dropfloodmv NNNN | 0 | off`
 
 ---
 

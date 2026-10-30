@@ -27,6 +27,7 @@ public:
   bool load();
   TagValue *get(char *tag);
   char *getValue(char *tag, char *defaultValue = nullptr);
+  int getIntValue(char *tag, int defaultValue = 0);
   void setValue(char *tag, char *value);
   void forget(char *tag);
   void listToSerial();

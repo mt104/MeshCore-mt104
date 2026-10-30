@@ -20,6 +20,7 @@
 #if defined(ESP32) or defined(NRF52_PLATFORM)
 #include "BTHomeService.h"
 #endif
+#include <target.h>
 
 // Believe it or not, this std C function is busted on some platforms!
 static uint32_t _atoi(const char* sp) {
@@ -544,6 +545,27 @@ void CommonCLI::handleCommand(uint32_t sender_timestamp, char* command, char* re
 #endif
     } else if (memcmp(command, "tag list", 8) == 0) {
       tagHelper.listToSerial();
+    } else if (strcmp(command, "autopower dropfloodmv 0") == 0 || strcmp(command, "autopower dropfloodmv off") == 0) {
+      tagHelper.forget("autopower.dropfloodmv");
+      strcpy(reply, "OK");
+    } else if (memcmp(command, "autopower dropfloodmv ", 22) == 0) {
+      uint32_t dropFloodMv = atoi(&command[22]);
+      if (dropFloodMv < 3000) {
+        strcpy(reply, "Error: dropfloodmv must be at least 3000");
+      } else {
+        tagHelper.setValue("autopower.dropfloodmv", &command[22]);
+        strcpy(reply, "OK");
+      }
+    } else if (memcmp(command, "autopower", 9) == 0) {
+      char buffer[256];
+      sprintf(reply, "   Voltage: %dmV", board.getBattMilliVolts());
+      const char* dropFloodMv = tagHelper.getValue("autopower.dropfloodmv");
+      if (dropFloodMv != nullptr && strlen(dropFloodMv) > 0) {
+        sprintf(buffer, "\n   dropfloodmv is %s", dropFloodMv);
+      } else {
+        strcpy(buffer, "\n   dropfloodmv not set");
+      }
+      strcat(reply, buffer);
     } else {
       strcpy(reply, "Unknown command");
     }

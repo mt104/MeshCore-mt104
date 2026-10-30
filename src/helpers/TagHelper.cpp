@@ -86,6 +86,14 @@ char *TagHelperClass::getValue(char *tag, char *defaultValue /* =nullptr */) {
     return defaultValue; // Tag not found
 }
 
+int TagHelperClass::getIntValue(char *tag, int defaultValue /* =0 */) {
+  char *value = getValue(tag);
+  if (value) {
+    return atoi(value);
+  }
+  return defaultValue;
+}
+
 void TagHelperClass::setValue(char *tag, char *value) {
   TagValue *current = nullptr;
   if (!_firstTagValue) {
