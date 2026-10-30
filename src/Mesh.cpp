@@ -1,5 +1,6 @@
 #include "Mesh.h"
 #include <target.h>
+#include "helpers/TagHelper.h"
 //#include <Arduino.h>
 
 namespace mesh {
@@ -140,7 +141,7 @@ DispatcherAction Mesh::onRecvPacket(Packet* pkt) {
   if (pkt->isRouteFlood() && filterRecvFloodPacket(pkt)) return ACTION_RELEASE;
 
   // Ignore flood packets below a certain battery Voltage
-  if (pkt->isRouteFlood() && board.getBattMilliVolts() < 3600) { // Hard-coded for quick test at roughly 50% battery
+  if (pkt->isRouteFlood() && board.getBattMilliVolts() < tagHelper.getIntValue("autopower.dropfloodmv", 0)) {
     return ACTION_RELEASE;
   }
 
