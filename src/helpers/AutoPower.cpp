@@ -22,6 +22,11 @@ uint16_t mvDropPerHour[NUM_HOURS] = {0};
 uint16_t mvLargestDropRecently = 0;
 const char *tagHighestMvDropPerHour = "autopower.highestdropperhourmv";
 
+// For tracking lowest safe Voltage
+uint16_t lowestSafeVoltage = 0;
+const uint16_t DEFAULT_LOWEST_SAFE_VOLTAGE = 3500;
+const char *tagLowestSafeVoltage = "autopower.lowestsafevoltage";
+
 void AutoPower::setup() {
     mvLatest = board.getBattMilliVolts();
     for (int i = 0; i < NUM_SAMPLES; i++) {
@@ -29,6 +34,7 @@ void AutoPower::setup() {
     }
     nextHourlyUpdateDue = millis() + 3600000; // set next hourly update due in 1 hour
     mvLargestDropRecently = tagHelper.getIntValue((char *)tagHighestMvDropPerHour, 0);
+    lowestSafeVoltage = tagHelper.getIntValue((char *)tagLowestSafeVoltage, DEFAULT_LOWEST_SAFE_VOLTAGE);
 }
 
 void AutoPower::loop() {
@@ -65,6 +71,11 @@ void AutoPower::loop() {
                 }
             }
             tagHelper.setIntValue((char *)tagHighestMvDropPerHour, mvLargestDropRecently);
+            uint16_t newLowestSafeVoltage = lowestVoltageSoFarThisHour + (mvLargestDropRecently / 2);
+            if (newLowestSafeVoltage < lowestSafeVoltage) {
+                lowestSafeVoltage = newLowestSafeVoltage;
+                tagHelper.setIntValue((char *)tagLowestSafeVoltage, lowestSafeVoltage);
+            }
         }
     }
 }
@@ -75,4 +86,8 @@ uint16_t AutoPower::getBattMilliVoltsSmoothed() {
 
 uint16_t AutoPower::getLargestDropRecently() {
     return mvLargestDropRecently;
+}
+
+uint16_t AutoPower::getLowestSafeVoltage() {
+    return lowestSafeVoltage;
 }

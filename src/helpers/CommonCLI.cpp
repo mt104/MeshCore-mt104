@@ -562,17 +562,18 @@ void CommonCLI::handleCommand(uint32_t sender_timestamp, char* command, char* re
       sprintf(reply, "   Voltage: %dmV", board.getBattMilliVolts());
       const char* dropFloodMv = tagHelper.getValue("autopower.dropfloodmv");
       if (dropFloodMv != nullptr && strlen(dropFloodMv) > 0) {
-        sprintf(buffer, "\n   dropfloodmv is %s", dropFloodMv);
+        sprintf(buffer, "\n   dropfloodmv: %s", dropFloodMv);
       } else {
-        strcpy(buffer, "\n   dropfloodmv not set");
+        strcpy(buffer, "\n   dropfloodmv: Not set");
       }
       strcat(reply, buffer);
+      uint16_t largestDrop = autoPower.getLargestDropRecently();
+      if (largestDrop > 0) {
+        sprintf(reply + strlen(reply), "\n   Highest mV/h: %dmV", largestDrop);
+      }
+      sprintf(reply + strlen(reply), "\n   Safe Voltage: %dmV", autoPower.getLowestSafeVoltage());
     } else {
       strcpy(reply, "Unknown command");
-    }
-    uint16_t largestDrop = autoPower.getLargestDropRecently();
-    if (largestDrop > 0) {
-      sprintf(reply + strlen(reply), "\n   Highest mV/h: %dmV", largestDrop);
     }
 }
 
