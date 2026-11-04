@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Dispatcher.h>
+#include "helpers/AutoPower.h"
 
 namespace mesh {
 
@@ -175,6 +176,7 @@ protected:
 
 public:
   void begin();
+  void setAutoPower(AutoPower ap);
   void loop();
 
   LocalIdentity self_id;
