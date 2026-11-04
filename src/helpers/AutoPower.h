@@ -7,4 +7,7 @@ public:
   void setup();
   void loop();
   uint16_t getBattMilliVoltsSmoothed();
+  uint16_t getLargestDropRecently();
 };
+
+extern AutoPower autoPower;
