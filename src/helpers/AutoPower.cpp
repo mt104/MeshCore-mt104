@@ -1,4 +1,5 @@
 #include "AutoPower.h"
+#include "TagHelper.h"
 #include <target.h>
 
 // For smoothing battery voltage readings
@@ -19,6 +20,7 @@ uint16_t lowestVoltagePerHour[NUM_HOURS] = {0};
 uint16_t highestVoltagePerHour[NUM_HOURS] = {0};
 uint16_t mvDropPerHour[NUM_HOURS] = {0};
 uint16_t mvLargestDropRecently = 0;
+const char *tagHighestMvDropPerHour = "autopower.highestdropperhourmv";
 
 void AutoPower::setup() {
     mvLatest = board.getBattMilliVolts();
@@ -26,6 +28,7 @@ void AutoPower::setup() {
         samples[i] = mvLatest;
     }
     nextHourlyUpdateDue = millis() + 3600000; // set next hourly update due in 1 hour
+    mvLargestDropRecently = tagHelper.getIntValue((char *)tagHighestMvDropPerHour, 0);
 }
 
 void AutoPower::loop() {
@@ -61,6 +64,7 @@ void AutoPower::loop() {
                     mvLargestDropRecently = mvDropPerHour[i];
                 }
             }
+            tagHelper.setIntValue((char *)tagHighestMvDropPerHour, mvLargestDropRecently);
         }
     }
 }
