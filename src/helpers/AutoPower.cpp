@@ -85,7 +85,10 @@ uint16_t AutoPower::getBattMilliVoltsSmoothed() {
 }
 
 uint16_t AutoPower::getLargestDropRecently() {
-    return mvLargestDropRecently;
+    if ((mvLargestDropRecently > 0)) {
+        return mvLargestDropRecently;
+    }
+    return highestVoltageSoFarThisHour - lowestVoltageSoFarThisHour;
 }
 
 uint16_t AutoPower::getLowestSafeVoltage() {
