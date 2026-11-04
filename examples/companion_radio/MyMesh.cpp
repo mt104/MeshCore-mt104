@@ -5,6 +5,7 @@
 #include <WiFi.h>
 #endif
 #include <Mesh.h>
+#include "helpers/AutoPower.h"
 
 #define CMD_APP_START                 1
 #define CMD_SEND_TXT_MSG              2
@@ -2204,6 +2205,15 @@ bool MyMesh::handleCommand(const char* command, uint32_t sender_timestamp, char*
       savePrefs();
       strcpy(reply, "OK");
     }
+    return true;
+  }
+  if (strcmp(command, "autopower") == 0) {
+    sprintf(reply, "   Voltage: %dmV", board.getBattMilliVolts());
+    uint16_t largestDrop = autoPower.getLargestDropRecently();
+    if (largestDrop > 0) {
+      sprintf(reply + strlen(reply), "\n   Highest mV/h: %dmV", largestDrop);
+    }
+    sprintf(reply + strlen(reply), "\n   Safe Voltage: %dmV", autoPower.getLowestSafeVoltage());
     return true;
   }
 

@@ -1,6 +1,7 @@
 #include <Arduino.h>   // needed for PlatformIO
 #include <Mesh.h>
 #include "MyMesh.h"
+#include "helpers/AutoPower.h"
 
 // Believe it or not, this std C function is busted on some platforms!
 static uint32_t _atoi(const char* sp) {
@@ -135,6 +136,8 @@ MultiSerialInterface interface_manager;
   bool wifi_was_connected = false;
   bool wifi_enabled = false;   // set at boot from prefs; false also when the effective SSID is blank
 #endif
+
+AutoPower autoPower;
 
 void setup() {
   Serial.begin(115200);
@@ -292,6 +295,8 @@ void setup() {
 #endif
 
   board.onBootComplete();
+
+  autoPower.setup();
 }
 
 void loop() {
@@ -306,6 +311,7 @@ void loop() {
 #ifdef HAS_EXTERNAL_WATCHDOG
   external_watchdog.loop();
 #endif
+  autoPower.loop();
 
   if (!the_mesh.hasPendingWork()) {
 #if defined(NRF52_PLATFORM)
