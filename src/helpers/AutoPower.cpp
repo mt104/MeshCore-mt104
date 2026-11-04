@@ -6,7 +6,7 @@ uint16_t mvLatest = 0;
 uint16_t mvSmoothed = 0;
 
 // Array to hold last N samples
-const int NUM_SAMPLES = 10;
+const int NUM_SAMPLES = 12;
 uint16_t samples[NUM_SAMPLES] = {0};
 int sampleIndex = 0;
 
