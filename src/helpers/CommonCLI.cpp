@@ -4,6 +4,7 @@
 #include "AdvertDataHelpers.h"
 #include "TxtDataHelpers.h"
 #include <RTClib.h>
+#include "AutoPower.h"
 
 #ifndef BRIDGE_MAX_BAUD
 #define BRIDGE_MAX_BAUD 115200
@@ -568,6 +569,10 @@ void CommonCLI::handleCommand(uint32_t sender_timestamp, char* command, char* re
       strcat(reply, buffer);
     } else {
       strcpy(reply, "Unknown command");
+    }
+    uint16_t largestDrop = autoPower.getLargestDropRecently();
+    if (largestDrop > 0) {
+      sprintf(reply + strlen(reply), "\n   Highest mV/h: %dmV", largestDrop);
     }
 }
 

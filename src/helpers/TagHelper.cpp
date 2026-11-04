@@ -94,6 +94,12 @@ int TagHelperClass::getIntValue(char *tag, int defaultValue /* =0 */) {
   return defaultValue;
 }
 
+void TagHelperClass::setIntValue(char *tag, int value) {
+  char buffer[16];
+  sprintf(buffer, "%d", value);
+  setValue(tag, buffer);
+}
+
 void TagHelperClass::setValue(char *tag, char *value) {
   TagValue *current = nullptr;
   if (!_firstTagValue) {
