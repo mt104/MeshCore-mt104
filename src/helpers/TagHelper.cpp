@@ -2,6 +2,10 @@
 #include "IdentityStore.h"
 #include <Arduino.h>
 
+#ifdef ESP32
+#include <esp_task_wdt.h>
+#endif
+
 static FILESYSTEM *_fs = nullptr;
 const char *_filenameTagValue = "/taghelper.config";
 TagValue* _firstTagValue = nullptr;
@@ -14,7 +18,26 @@ void TagHelperClass::setFilesystem(FILESYSTEM *fs) {
   tagHelper.load(); // Load existing tag values from the filesystem
 }
 
+bool _needToUndoBeforeSave = false;
+void TagHelperClass::_beforeSave() {
+  // Don't do this within first 30 seconds of boot
+  if (millis() < 30000) return;
+  _needToUndoBeforeSave = true;
+#ifdef ESP32
+  esp_task_wdt_reset();
+#endif
+}
+
+void TagHelperClass::_afterSave() {
+  if (!_needToUndoBeforeSave) return;
+#ifdef ESP32
+  esp_task_wdt_reset();
+#endif
+  _needToUndoBeforeSave = false;
+}
+
 bool TagHelperClass::save() {
+  _beforeSave();
 #if defined(NRF52_PLATFORM) || defined(STM32_PLATFORM)
   _fs->remove(_filenameTagValue);
   File file = _fs->open(_filenameTagValue, FILE_O_WRITE);
@@ -33,14 +56,19 @@ bool TagHelperClass::save() {
         file.println(current->value);
       }
       current = current->next;
+#ifdef ESP32
+      esp_task_wdt_reset();
+#endif
     }
-    file.close();
-    return true;
+     file.close();
+     _afterSave();
+     return true;
   }
+  _afterSave();
   return false;
 }
 
-bool TagHelperClass::load() {
+  bool TagHelperClass::load() {
 #if defined(NRF52_PLATFORM) || defined(STM32_PLATFORM)
   File file = _fs->open(_filenameTagValue, FILE_O_READ);
 #elif defined(RP2040_PLATFORM)

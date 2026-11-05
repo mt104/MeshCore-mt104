@@ -23,6 +23,8 @@ class TagHelperClass {
 public:
   TagHelperClass() { }
   static void setFilesystem(FILESYSTEM *fs);
+  void _beforeSave();
+  void _afterSave();
   bool save();
   bool load();
   TagValue *get(char *tag);
