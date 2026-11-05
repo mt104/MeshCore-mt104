@@ -38,46 +38,75 @@ void AutoPower::setup() {
 }
 
 void AutoPower::loop() {
-    unsigned long now = millis();
-    if (now - lastUpdate >= 10000) {
-        mvLatest = board.getBattMilliVolts();
-        samples[sampleIndex] = mvLatest;
-        sampleIndex = (sampleIndex + 1) % NUM_SAMPLES;
-        // Update smoothed value
-        uint32_t sum = 0;
-        for (int i = 0; i < NUM_SAMPLES; i++) {
-            sum += samples[i];
-        }
-        mvSmoothed = sum / NUM_SAMPLES;
-        lastUpdate = now;
-        if (mvSmoothed < lowestVoltageSoFarThisHour || lowestVoltageSoFarThisHour == 0) {
-            lowestVoltageSoFarThisHour = mvSmoothed;
-        }
-        if (mvSmoothed > highestVoltageSoFarThisHour) {
-            highestVoltageSoFarThisHour = mvSmoothed;
-        }
-        if (now >= nextHourlyUpdateDue) {
-            nextHourlyUpdateDue = now + 3600000; // set next hourly update due in 1 hour
-            lowestVoltagePerHour[hourIndex] = lowestVoltageSoFarThisHour;
-            highestVoltagePerHour[hourIndex] = highestVoltageSoFarThisHour;
-            mvDropPerHour[hourIndex] = highestVoltageSoFarThisHour - lowestVoltageSoFarThisHour;
-            hourIndex = (hourIndex + 1) % NUM_HOURS;
-            lowestVoltageSoFarThisHour = mvSmoothed;
-            highestVoltageSoFarThisHour = mvSmoothed;
-            mvLargestDropRecently = 0;
-            for (int i = 0; i < NUM_HOURS; i++) {
-                if (mvDropPerHour[i] > mvLargestDropRecently) {
-                    mvLargestDropRecently = mvDropPerHour[i];
-                }
-            }
-            tagHelper.setIntValue((char *)tagHighestMvDropPerHour, mvLargestDropRecently);
-            uint16_t newLowestSafeVoltage = lowestVoltageSoFarThisHour + (mvLargestDropRecently / 2);
-            if (newLowestSafeVoltage < lowestSafeVoltage) {
-                lowestSafeVoltage = newLowestSafeVoltage;
-                tagHelper.setIntValue((char *)tagLowestSafeVoltage, lowestSafeVoltage);
-            }
-        }
+  unsigned long now = millis();
+
+  // Use safe millis rollover subtraction
+  if (now - lastUpdate >= 10000) {
+    mvLatest = board.getBattMilliVolts();
+
+    // Safety bounds check for sampleIndex
+    if (sampleIndex < NUM_SAMPLES) {
+      samples[sampleIndex] = mvLatest;
     }
+    sampleIndex = (sampleIndex + 1) % NUM_SAMPLES;
+
+    // Update smoothed value
+    uint32_t sum = 0;
+    for (int i = 0; i < NUM_SAMPLES; i++) {
+      sum += samples[i];
+    }
+    mvSmoothed = sum / NUM_SAMPLES;
+    lastUpdate = now;
+
+    if (lowestVoltageSoFarThisHour == 0 || mvSmoothed < lowestVoltageSoFarThisHour) {
+      lowestVoltageSoFarThisHour = mvSmoothed;
+    }
+    if (mvSmoothed > highestVoltageSoFarThisHour) {
+      highestVoltageSoFarThisHour = mvSmoothed;
+    }
+
+    // Hourly update check using safe subtraction
+    if ((long)(now - nextHourlyUpdateDue) >= 0) {
+      nextHourlyUpdateDue = now + 3600000;
+
+      if (hourIndex < NUM_HOURS) {
+        lowestVoltagePerHour[hourIndex] = lowestVoltageSoFarThisHour;
+        highestVoltagePerHour[hourIndex] = highestVoltageSoFarThisHour;
+
+        // Prevent underflow if high/low got inverted
+        if (highestVoltageSoFarThisHour >= lowestVoltageSoFarThisHour) {
+          mvDropPerHour[hourIndex] = highestVoltageSoFarThisHour - lowestVoltageSoFarThisHour;
+        } else {
+          mvDropPerHour[hourIndex] = 0;
+        }
+
+        hourIndex = (hourIndex + 1) % NUM_HOURS;
+      }
+
+      lowestVoltageSoFarThisHour = mvSmoothed;
+      highestVoltageSoFarThisHour = mvSmoothed;
+
+      uint16_t previousMaxDrop = mvLargestDropRecently;
+      mvLargestDropRecently = 0;
+
+      for (int i = 0; i < NUM_HOURS; i++) {
+        if (mvDropPerHour[i] > mvLargestDropRecently) {
+          mvLargestDropRecently = mvDropPerHour[i];
+        }
+      }
+
+      // Only write to storage if the value actually changed to prevent WDT / flash wear
+      if (mvLargestDropRecently != previousMaxDrop) {
+        tagHelper.setIntValue((char *)tagHighestMvDropPerHour, mvLargestDropRecently);
+      }
+
+      uint16_t newLowestSafeVoltage = lowestVoltageSoFarThisHour + (mvLargestDropRecently / 2);
+      if (newLowestSafeVoltage < lowestSafeVoltage) {
+        lowestSafeVoltage = newLowestSafeVoltage;
+        tagHelper.setIntValue((char *)tagLowestSafeVoltage, lowestSafeVoltage);
+      }
+    }
+  }
 }
 
 uint16_t AutoPower::getBattMilliVoltsSmoothed() {
