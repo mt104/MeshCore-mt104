@@ -18,26 +18,17 @@ void TagHelperClass::setFilesystem(FILESYSTEM *fs) {
   tagHelper.load(); // Load existing tag values from the filesystem
 }
 
-bool _needToUndoBeforeSave = false;
-void TagHelperClass::_beforeSave() {
-  // Don't do this within first 30 seconds of boot
-  if (millis() < 30000) return;
-  _needToUndoBeforeSave = true;
+void TagHelperClass::feedWatchdog() {
 #ifdef ESP32
   esp_task_wdt_reset();
 #endif
-}
-
-void TagHelperClass::_afterSave() {
-  if (!_needToUndoBeforeSave) return;
-#ifdef ESP32
-  esp_task_wdt_reset();
+#ifdef NRF52_PLATFORM
+  yield(); // Feed the NRF52 watchdog if needed
 #endif
-  _needToUndoBeforeSave = false;
 }
 
 bool TagHelperClass::save() {
-  _beforeSave();
+  feedWatchdog();
 #if defined(NRF52_PLATFORM) || defined(STM32_PLATFORM)
   _fs->remove(_filenameTagValue);
   File file = _fs->open(_filenameTagValue, FILE_O_WRITE);
@@ -56,19 +47,18 @@ bool TagHelperClass::save() {
         file.println(current->value);
       }
       current = current->next;
-#ifdef ESP32
-      esp_task_wdt_reset();
-#endif
+      feedWatchdog();
     }
      file.close();
-     _afterSave();
+     feedWatchdog();
      return true;
   }
-  _afterSave();
+  feedWatchdog();
   return false;
 }
 
   bool TagHelperClass::load() {
+    feedWatchdog();
 #if defined(NRF52_PLATFORM) || defined(STM32_PLATFORM)
   File file = _fs->open(_filenameTagValue, FILE_O_READ);
 #elif defined(RP2040_PLATFORM)
@@ -88,10 +78,13 @@ bool TagHelperClass::save() {
         value.trim();
         setValue(const_cast<char*>(tag.c_str()), const_cast<char*>(value.c_str()));
       }
+      feedWatchdog();
     }
     file.close();
+    feedWatchdog();
     return true;
   }
+  feedWatchdog();
   return false;
 }
 
