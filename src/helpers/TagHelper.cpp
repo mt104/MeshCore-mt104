@@ -9,6 +9,7 @@
 static FILESYSTEM *_fs = nullptr;
 const char *_filenameTagValue = "/taghelper.config";
 TagValue* _firstTagValue = nullptr;
+bool _duringLoad = false;
 
 // Linked list of registered callbacks for tag value changes
 static TagChangedCallbackNode* _firstCallbackNode = nullptr;
@@ -59,6 +60,7 @@ bool TagHelperClass::save() {
 
   bool TagHelperClass::load() {
     feedWatchdog();
+    _duringLoad = true;
 #if defined(NRF52_PLATFORM) || defined(STM32_PLATFORM)
   File file = _fs->open(_filenameTagValue, FILE_O_READ);
 #elif defined(RP2040_PLATFORM)
@@ -82,8 +84,10 @@ bool TagHelperClass::save() {
     }
     file.close();
     feedWatchdog();
+    _duringLoad = false;
     return true;
   }
+  _duringLoad = false;
   feedWatchdog();
   return false;
 }
@@ -150,10 +154,11 @@ void TagHelperClass::setValue(char *tag, char *value) {
     current->dirty = true;
   }
   if (current->dirty) {
-    save(); // Save to filesystem if the value has changed
+    if (!_duringLoad) {
+      save(); // Save to filesystem if the value has changed
+      notifyTagChanged(tag, value); // Notify anyone that cares that the tag value has changed
+    }
     current->dirty = false;
-    // Notify anyone that cares that the tag value has changed
-    notifyTagChanged(tag, value);
   }
 }
 
