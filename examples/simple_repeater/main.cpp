@@ -67,8 +67,6 @@ void setup() {
 
   board.begin();
 
-  autoPower.setup();
-
 #ifdef HAS_EXTERNAL_WATCHDOG
   external_watchdog.begin();
 #endif
@@ -118,6 +116,8 @@ void setup() {
   }, nullptr);
   */
   tagHelper.setFilesystem(fs);
+
+  autoPower.setup();
 
   if (!store.load("_main", the_mesh.self_id)) {
     MESH_DEBUG_PRINTLN("Generating new keypair");
