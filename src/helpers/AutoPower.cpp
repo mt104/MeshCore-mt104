@@ -21,6 +21,8 @@ uint16_t highestVoltagePerHour[NUM_HOURS] = {0};
 uint16_t mvDropPerHour[NUM_HOURS] = {0};
 uint16_t mvLargestDropRecently = 0;
 const char *tagHighestMvDropPerHour = "autopower.highestdropperhourmv";
+uint16_t mvAverageDropRecently = 0;
+const char *tagAverageMvDropRecently = "autopower.averagedroprecently";
 
 // For tracking lowest safe Voltage
 uint16_t lowestSafeVoltage = 0;
@@ -34,6 +36,10 @@ void AutoPower::setup() {
     }
     nextHourlyUpdateDue = millis() + 3600000; // set next hourly update due in 1 hour
     mvLargestDropRecently = tagHelper.getIntValue((char *)tagHighestMvDropPerHour, 0);
+    mvAverageDropRecently = tagHelper.getIntValue((char *)tagAverageMvDropRecently, 0);
+    for (int i = 0; i < NUM_HOURS; i++) {
+        mvDropPerHour[i] = mvAverageDropRecently;
+    }
     lowestSafeVoltage = tagHelper.getIntValue((char *)tagLowestSafeVoltage, DEFAULT_LOWEST_SAFE_VOLTAGE);
 }
 
@@ -80,6 +86,14 @@ void AutoPower::loop() {
           mvDropPerHour[hourIndex] = 0;
         }
 
+        // Calculate the average drop over recent hours
+        uint32_t sumDrops = 0;
+        for (int i = 0; i < NUM_HOURS; i++) {
+          sumDrops += mvDropPerHour[i];
+        }
+        mvAverageDropRecently = sumDrops / NUM_HOURS;
+        tagHelper.setIntValue((char *)tagAverageMvDropRecently, mvAverageDropRecently);
+
         hourIndex = (hourIndex + 1) % NUM_HOURS;
       }
 
@@ -120,17 +134,21 @@ uint16_t AutoPower::getLargestDropRecently() {
     return highestVoltageSoFarThisHour - lowestVoltageSoFarThisHour;
 }
 
+uint16_t AutoPower::getAverageDropRecently() {
+    return mvAverageDropRecently;
+}
+
 uint16_t AutoPower::getLowestSafeVoltage() {
     return lowestSafeVoltage;
 }
 
 float AutoPower::hoursRemaining() {
     // Estimate hours remaining based on the largest drop recently and the lowest safe voltage
-    uint16_t largestDrop = getLargestDropRecently(); 
-    if (largestDrop == 0) {
+    uint16_t mvAverageDropRecently = getAverageDropRecently(); 
+    if (mvAverageDropRecently == 0) {
         return -1.0; // Unknown
     }
     uint16_t voltageAboveSafe = mvSmoothed - lowestSafeVoltage;
-    float hours = (float)voltageAboveSafe / (float)largestDrop;
+    float hours = (float)voltageAboveSafe / (float)mvAverageDropRecently;
     return hours;
 }
