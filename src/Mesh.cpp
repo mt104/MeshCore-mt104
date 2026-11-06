@@ -327,6 +327,28 @@ DispatcherAction Mesh::onRecvPacket(Packet* pkt) {
           MESH_DEBUG_PRINTLN("%s Mesh::onRecvPacket(): valid advertisement received!", getLogDateTime());
           onAdvertRecv(pkt, id, timestamp, app_data, app_data_len);
           action = routeRecvPacket(pkt);
+
+          // Try to synchronize local RTC with incoming advert timestamps from close peers
+          if (pkt->getPathHashCount() < 2) {
+            // Get the timestamp field as a uint32_t from bytes 32 to 35 of the payload
+            uint32_t advert_unixtime;
+            memcpy(&advert_unixtime, &pkt->payload[32], 4);
+
+            // Print incoming timestamp for debugging
+            Serial.printf("Incoming epoch: %u, hash count: %d, local time: %u\n", advert_unixtime, pkt->getPathHashCount(), getRTCClock()->getCurrentTime());
+
+            // Lower limit for trusted incoming timestamp, 6th November 2026
+            const uint32_t timestamp_lower_limit = 1793923200; // 6th November 2026 00:00:00 UTC
+            // Upper limit for trusted incoming timestamp, 6th November 2030
+            const uint32_t timestamp_upper_limit = 1920153600; // 6th November 2030 00:00:00 UTC
+            if (advert_unixtime > timestamp_lower_limit && advert_unixtime < timestamp_upper_limit) {
+              if (getRTCClock()->getCurrentTime() < timestamp_lower_limit) {
+                Serial.printf("Setting local RTC time: %u\n", advert_unixtime);
+                getRTCClock()->setCurrentTime(advert_unixtime);
+              }
+            }
+          }
+
         } else {
           MESH_DEBUG_PRINTLN("%s Mesh::onRecvPacket(): received advertisement with forged signature! (app_data_len=%d)", getLogDateTime(), app_data_len);
         }
