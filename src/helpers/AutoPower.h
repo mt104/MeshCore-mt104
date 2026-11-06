@@ -9,6 +9,7 @@ public:
   uint16_t getBattMilliVoltsSmoothed();
   uint16_t getLargestDropRecently();
   uint16_t getLowestSafeVoltage();
+  float hoursRemaining();
 };
 
 extern AutoPower autoPower;
