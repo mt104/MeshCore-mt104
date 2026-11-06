@@ -123,3 +123,14 @@ uint16_t AutoPower::getLargestDropRecently() {
 uint16_t AutoPower::getLowestSafeVoltage() {
     return lowestSafeVoltage;
 }
+
+float AutoPower::hoursRemaining() {
+    // Estimate hours remaining based on the largest drop recently and the lowest safe voltage
+    uint16_t largestDrop = getLargestDropRecently(); 
+    if (largestDrop == 0) {
+        return -1.0; // Unknown
+    }
+    uint16_t voltageAboveSafe = mvSmoothed - lowestSafeVoltage;
+    float hours = (float)voltageAboveSafe / (float)largestDrop;
+    return hours;
+}

@@ -572,6 +572,12 @@ void CommonCLI::handleCommand(uint32_t sender_timestamp, char* command, char* re
         sprintf(reply + strlen(reply), "\n   Highest mV/h: %dmV", largestDrop);
       }
       sprintf(reply + strlen(reply), "\n   Safe Voltage: %dmV", autoPower.getLowestSafeVoltage());
+      float hours = autoPower.hoursRemaining();
+      if (hours >= 0) {
+        sprintf(reply + strlen(reply), "\n   Hours Remaining: %.2f", hours);
+      } else {
+        strcat(reply, "\n   Hours Remaining: Unknown");
+      }
     } else {
       strcpy(reply, "Unknown command");
     }
