@@ -571,6 +571,10 @@ void CommonCLI::handleCommand(uint32_t sender_timestamp, char* command, char* re
       if (largestDrop > 0) {
         sprintf(reply + strlen(reply), "\n   Highest mV/h: %dmV", largestDrop);
       }
+      uint16_t averageDrop = autoPower.getAverageDropRecently();
+      if (averageDrop > 0) {
+        sprintf(reply + strlen(reply), "\n   Average mV/h: %dmV", averageDrop);
+      }
       sprintf(reply + strlen(reply), "\n   Safe Voltage: %dmV", autoPower.getLowestSafeVoltage());
       float hours = autoPower.hoursRemaining();
       if (hours >= 0) {
