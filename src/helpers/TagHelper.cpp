@@ -143,6 +143,10 @@ void TagHelperClass::setValue(char *tag, char *value) {
       current = current->next;
     }
   }
+  // Shortcut for same value
+  if (current->value && strcmp(current->value, value) == 0) {
+    return; // Value is the same, no need to update
+  }
   if (current->value) {
     free(current->value);
   }
