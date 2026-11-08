@@ -342,9 +342,20 @@ DispatcherAction Mesh::onRecvPacket(Packet* pkt) {
             // Upper limit for trusted incoming timestamp, 6th November 2030
             const uint32_t timestamp_upper_limit = 1920153600; // 6th November 2030 00:00:00 UTC
             if (advert_unixtime > timestamp_lower_limit && advert_unixtime < timestamp_upper_limit) {
-              if (getRTCClock()->getCurrentTime() < timestamp_lower_limit) {
+              if (getRTCClock()->getCurrentTime() < timestamp_lower_limit or getRTCClock()->getCurrentTime() > timestamp_upper_limit) {
+                // Local clock is outside the trusted range, update it with the incoming timestamp
                 Serial.printf("Setting local RTC time: %u\n", advert_unixtime);
                 getRTCClock()->setCurrentTime(advert_unixtime);
+              } else {
+                // Local clock is within the trusted range, but is it significantly different from the incoming timestamp of a directly received advertisement?
+                if (pkt->isRouteDirect() && abs((int32_t)(getRTCClock()->getCurrentTime() - advert_unixtime)) > 60) { // e.g., more than 60 seconds difference
+                  // Move 10% of the difference towards the incoming timestamp
+                  int32_t current_time = getRTCClock()->getCurrentTime();
+                  int32_t diff = advert_unixtime - current_time;
+                  int32_t adjustment = diff / 10;
+                  Serial.printf("Adjusting local RTC time from %u towards %u by %d seconds\n", current_time, advert_unixtime, adjustment);
+                  getRTCClock()->setCurrentTime(current_time + adjustment);
+                }
               }
             }
           }
