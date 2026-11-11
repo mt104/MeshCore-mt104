@@ -557,6 +557,9 @@ void CommonCLI::handleCommand(uint32_t sender_timestamp, char* command, char* re
         tagHelper.setValue("autopower.dropfloodmv", &command[22]);
         strcpy(reply, "OK");
       }
+    } else if (memcmp(command, "autopower recalibrate", 20) == 0) {
+      autoPower.recalibrate();
+      strcpy(reply, "OK");
     } else if (memcmp(command, "autopower", 9) == 0) {
       char buffer[256];
       sprintf(reply, "   Voltage: %dmV", board.getBattMilliVolts());

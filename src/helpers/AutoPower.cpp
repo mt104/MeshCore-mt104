@@ -43,6 +43,27 @@ void AutoPower::setup() {
     lowestSafeVoltage = tagHelper.getIntValue((char *)tagLowestSafeVoltage, DEFAULT_LOWEST_SAFE_VOLTAGE);
 }
 
+void AutoPower::recalibrate() {
+    mvLatest = board.getBattMilliVolts();
+    for (int i = 0; i < NUM_SAMPLES; i++) {
+        samples[i] = mvLatest;
+    }
+    mvSmoothed = mvLatest;
+    lowestVoltageSoFarThisHour = mvSmoothed;
+    highestVoltageSoFarThisHour = mvSmoothed;
+    for (int i = 0; i < NUM_HOURS; i++) {
+        lowestVoltagePerHour[i] = 0;
+        highestVoltagePerHour[i] = 0;
+        mvDropPerHour[i] = 0;
+    }
+    lowestSafeVoltage = DEFAULT_LOWEST_SAFE_VOLTAGE;
+    tagHelper.setIntValue((char *)tagLowestSafeVoltage, lowestSafeVoltage);
+    mvLargestDropRecently = 0;
+    tagHelper.setIntValue((char *)tagHighestMvDropPerHour, mvLargestDropRecently);
+    mvAverageDropRecently = 0;
+    tagHelper.setIntValue((char *)tagAverageMvDropRecently, mvAverageDropRecently);
+}
+
 void AutoPower::loop() {
   unsigned long now = millis();
 

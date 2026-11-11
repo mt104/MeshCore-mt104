@@ -1289,5 +1289,9 @@ Ethernet support is available on RAK4631 boards with a RAK13800 (W5100S) Etherne
 **Usage:**
 - `autopower dropfloodmv NNNN | 0 | off`
 
+#### Tell autopower to recalibrate, as if it had not run before. Useful after making changes to battery or power source.
+**Usage:**
+- `autopower recalibrate`
+
 ---
 
