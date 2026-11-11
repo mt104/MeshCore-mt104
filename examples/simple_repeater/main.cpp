@@ -55,6 +55,9 @@ static unsigned long userBtnDownAt = 0;
 #define USER_BTN_HOLD_OFF_MILLIS 1500
 #endif
 
+#include "helpers/ControlHelper.h"
+ControlHelperClass controlHelper;
+
 /* WIFI RECONNECT TRACKERS */
 #if defined(ESP32)
 bool wifi_needs_reconnect = false;
@@ -140,6 +143,7 @@ void setup() {
   sensors.begin();
 
   the_mesh.begin(fs);
+  controlHelper.Init(the_mesh);
 
 #ifdef DISPLAY_CLASS
   ui_task.begin(the_mesh.getNodePrefs(), FIRMWARE_BUILD_DATE, FIRMWARE_VERSION);

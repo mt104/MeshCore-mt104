@@ -5,6 +5,7 @@
 #include "TxtDataHelpers.h"
 #include <RTClib.h>
 #include "AutoPower.h"
+#include "ControlHelper.h"
 
 #ifndef BRIDGE_MAX_BAUD
 #define BRIDGE_MAX_BAUD 115200
@@ -585,6 +586,10 @@ void CommonCLI::handleCommand(uint32_t sender_timestamp, char* command, char* re
       } else {
         strcat(reply, "\n   Hours Remaining: Unknown");
       }
+    } else if (memcmp(command, "control sendstatus", 20) == 0) {
+      ControlHelperClass controlHelper;
+      controlHelper.SendStatus();
+      strcpy(reply, "OK");
     } else {
       strcpy(reply, "Unknown command");
     }
