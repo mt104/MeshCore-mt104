@@ -5,6 +5,7 @@
 class AutoPower {
 public:
   void setup();
+  void recalibrate();
   void loop();
   uint16_t getBattMilliVoltsSmoothed();
   uint16_t getLargestDropRecently();
