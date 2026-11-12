@@ -167,7 +167,9 @@ void setup() {
 #endif
 
 #if defined(ESP32) or defined(NRF52_PLATFORM)
-  bthomeService.init(the_mesh.getNodePrefs()->node_name); // Initialize BTHome service for BLE sensor data
+  char nodeIdStr[7];
+  mesh::Utils::toHex(nodeIdStr, the_mesh.getSelfId().pub_key, 3);
+  bthomeService.init(the_mesh.getNodePrefs()->node_name, nodeIdStr); // Initialize BTHome service for BLE sensor data
 #endif
 
   // send out initial zero hop Advertisement to the mesh
@@ -262,6 +264,7 @@ void loop() {
       int batteryPercent = (mv - 3000) * 100 / (4200 - 3000);
       if (batteryPercent < 0) batteryPercent = 0;
       if (batteryPercent > 100) batteryPercent = 100;
+
       // Update advertisment
       bthomeService.sendSensorData(batteryPercent, (uint16_t)mv, radio_driver.getNoiseFloor(),
                                    the_mesh.getNodePrefs()->tx_power_dbm, board.getMCUTemperature());

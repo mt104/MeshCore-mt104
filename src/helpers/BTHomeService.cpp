@@ -7,6 +7,7 @@
 BTHomeService bthomeService;
 
 char *_name = nullptr;
+char *_nodeIdStr = nullptr;
 bool _isEnabled = false;
 uint32_t _interval_seconds = 10;
 
@@ -24,7 +25,7 @@ void BTHomeService::on() {
   tagHelper.setValue(keyIsEnabled, "1");
   resetPacketCounter();
   resetNeighboursSNR();
-  init(_name);
+  init(_name, _nodeIdStr);
 }
 
 void BTHomeService::off() {
@@ -50,12 +51,16 @@ void BTHomeService::setIntervalSeconds(uint32_t interval) {
   tagHelper.setValue(keyInterval, buffer);
 }
 
-void BTHomeService::init(const char *deviceName) {
+void BTHomeService::init(const char *deviceName, const char *nodeIdStr) {
   // Store the device name for later use
   if (_name != nullptr) {
     free(_name);
   }
   _name = strdup(deviceName);
+  if (_nodeIdStr != nullptr) {
+    free(_nodeIdStr);
+  }
+  _nodeIdStr = strdup(nodeIdStr);
 
   // Load the interval from tagHelper
   _interval_seconds = atoi(tagHelper.getValue(keyInterval, "10"));
@@ -166,6 +171,7 @@ void BTHomeService::updateNeighboursSNR(uint8_t from, float snr) {
 
 unsigned long _lastTxPowerSent = 0;
 unsigned long _lastTemperatureSent = 0;
+unsigned long _lastNodeIdSent = 0;
 void BTHomeService::sendSensorData(uint8_t batteryPercent, uint16_t batteryVoltage, int8_t noiseFloor, uint8_t txPower, float temperature) {
 
   if (!isEnabled()) return;
@@ -225,10 +231,15 @@ void BTHomeService::sendSensorData(uint8_t batteryPercent, uint16_t batteryVolta
   } else if (millis() - _lastTemperatureSent > 90000 || _lastTemperatureSent > millis()) {
     sprintf(neighbourData, "TC %.2f", temperature);
     _lastTemperatureSent = millis();
-  } else {
+  } else if (millis() - _lastNodeIdSent > 100000 || _lastNodeIdSent > millis()) {
+    sprintf(neighbourData, "I %s", _nodeIdStr);
+    _lastNodeIdSent = millis();
+  } else if (neighbours[0].id != 0) {
     // Neighbours' SNR data as text, one at once using first in array
     sprintf(neighbourData, "%02X %0.2f", neighbours[0].id, neighbours[0].snr);
     removeFirstNeighbour();
+  } else {
+    return; // Bail out if there's nothing to report
   }
 
   // Add neighbour data to the payload
