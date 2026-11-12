@@ -43,7 +43,7 @@ public:
   void resetNeighboursSNR();
   void removeFirstNeighbour();
   void updateNeighboursSNR(uint8_t from, float snr);
-  void sendSensorData(uint8_t batteryPercent, uint16_t batteryVoltage, int8_t noiseFloor, uint8_t txPower);
+  void sendSensorData(uint8_t batteryPercent, uint16_t batteryVoltage, int8_t noiseFloor, uint8_t txPower, float temperature);
 };
 
 extern BTHomeService bthomeService;
