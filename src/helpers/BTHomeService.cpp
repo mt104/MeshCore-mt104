@@ -165,7 +165,8 @@ void BTHomeService::updateNeighboursSNR(uint8_t from, float snr) {
 }
 
 unsigned long _lastTxPowerSent = 0;
-void BTHomeService::sendSensorData(uint8_t batteryPercent, uint16_t batteryVoltage, int8_t noiseFloor, uint8_t txPower) {
+unsigned long _lastTemperatureSent = 0;
+void BTHomeService::sendSensorData(uint8_t batteryPercent, uint16_t batteryVoltage, int8_t noiseFloor, uint8_t txPower, float temperature) {
 
   if (!isEnabled()) return;
 
@@ -221,6 +222,9 @@ void BTHomeService::sendSensorData(uint8_t batteryPercent, uint16_t batteryVolta
   if (millis() - _lastTxPowerSent > 120000 || _lastTxPowerSent > millis()) {
     sprintf(neighbourData, "TX %d", txPower);
     _lastTxPowerSent = millis();
+  } else if (millis() - _lastTemperatureSent > 90000 || _lastTemperatureSent > millis()) {
+    sprintf(neighbourData, "TC %.2f", temperature);
+    _lastTemperatureSent = millis();
   } else {
     // Neighbours' SNR data as text, one at once using first in array
     sprintf(neighbourData, "%02X %0.2f", neighbours[0].id, neighbours[0].snr);
