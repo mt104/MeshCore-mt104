@@ -23,45 +23,91 @@ const uint8_t HARDCODED_PRIVATE_PSK[16] = {
     0x33, 0xcf, 0x9f, 0x00, 0xf5, 0xab, 0x80, 0x11
 };
 
+// Calculate 2-byte channel hash from key (or channel secret)
+uint16_t getChannelHash(const uint8_t *key) {
+  uint16_t h = 0xFFFF;
+  for (int i = 0; i < 16; i++) {
+    h ^= key[i];
+    for (int j = 0; j < 8; j++) {
+      if (h & 1)
+        h = (h >> 1) ^ 0xA001;
+      else
+        h >>= 1;
+    }
+  }
+  return h;
+}
+
 bool ControlHelperClass::sendMessage(const char *messageText) {
   if (!my_mesh) {
     Serial.println("Error: Mesh not initialized.");
     return false;
   }
 
-  mesh::Packet pkt;
+  mesh::GroupChannel groupChannel;
+  uint16_t channelHash = getChannelHash(HARDCODED_PRIVATE_PSK);
+  groupChannel.hash = channelHash;
+  groupChannel.secret = HARDCODED_PRIVATE_PSK;
 
-  // 1. Set up packet header flags (Payload Type Group/Data + Flood Route mode)
-  // PH_TYPE_SHIFT is 2, and ROUTE_TYPE_FLOOD is 0x01
-  pkt.header = (PAYLOAD_TYPE_GRP_DATA << 2) | ROUTE_TYPE_FLOOD;
 
-  // 2. Set path metadata length (0 for a direct zero-hop broadcast from this node)
-  pkt.path_len = 0;
 
-  // 3. Construct the inner payload buffer
-  // Layout typically begins with the channel index reference byte followed by text
-  uint8_t innerBuffer[200];
+  auto pkt2 = my_mesh->createGroupDatagram
+
+mesh::Packet pkt;
+
+  // 1. Set payload type to GRP_DATA (Flood route bit set automatically by sendFlood)
+  pkt.header = (PAYLOAD_TYPE_GRP_DATA << 2);
+
+  // 2. Format Cleartext Payload: [Timestamp/ID (4 bytes)] + [Sender ID (4 bytes)] + [Text String]
+  uint8_t cleartext[180];
+  uint32_t now = millis() / 1000;
+  uint32_t senderId = my_mesh->getNodeId(); // Get repeater's local node ID
+
+  memcpy(&cleartext[0], &now, 4);
+  memcpy(&cleartext[4], &senderId, 4);
+
   int textLen = strlen(messageText);
-  if (textLen > 150) textLen = 150; // Keep within safe LoRa bounds
+  if (textLen > 140) textLen = 140;
+  memcpy(&cleartext[8], messageText, textLen);
 
-  innerBuffer[0] = 0x01; // Target private channel index slot
-  memcpy(&innerBuffer[1], messageText, textLen);
-  int innerLen = 1 + textLen;
-
-  // 4. Encrypt the payload data in place using your AES-128 routine with the hard-coded PSK
-  // encrypt_aes_cbc(innerBuffer, innerLen, HARDCODED_PRIVATE_PSK);
-
-  // 5. Assign directly to the packet's public payload buffer and length members
-  if (innerLen > sizeof(pkt.payload)) { // Or check against your buffer limit
-    Serial.println("Error: Payload too large.");
-    return false;
+  int rawLen = 8 + textLen;
+  int paddedLen = ((rawLen + 15) / 16) * 16;
+  uint8_t padValue = paddedLen - rawLen;
+  for (int i = rawLen; i < paddedLen; i++) {
+    cleartext[i] = padValue;
   }
 
-  memcpy(pkt.payload, innerBuffer, innerLen);
-  pkt.payload_len = innerLen;
+  // 3. Prepare Encrypted Wire Payload Layout:
+  // [Channel Hash (2 bytes)] + [IV (16 bytes)] + [AES-CBC Encrypted Body (paddedLen)]
+  uint16_t channelHash = getChannelHash(HARDCODED_PRIVATE_PSK);
 
-  Serial.printf("Sending message via private channel: %s\n", messageText);
+  uint8_t iv[16];
+  for (int i = 0; i < 16; i++) {
+    iv[i] = (uint8_t)random(0, 256); // Generate random IV
+  }
 
+  uint8_t encryptedBody[192];
+  CBC<AES128> cbc;
+  cbc.setKey(HARDCODED_PRIVATE_PSK, 16);
+  cbc.setIV(iv, 16);
+  cbc.encrypt(encryptedBody, cleartext, paddedLen);
+
+  // Assembly
+  int totalPayloadLen = 0;
+  memcpy(&pkt.payload[0], &channelHash, 2);
+  totalPayloadLen += 2;
+
+  memcpy(&pkt.payload[totalPayloadLen], iv, 16);
+  totalPayloadLen += 16;
+
+  memcpy(&pkt.payload[totalPayloadLen], encryptedBody, paddedLen);
+  totalPayloadLen += paddedLen;
+
+  pkt.payload_len = totalPayloadLen;
+
+  Serial.printf("Transmitting private channel message (%d bytes)... \n", totalPayloadLen);
+
+  // 4. Hand packet over to Mesh routing engine (it handles path construction and headers)
   my_mesh->sendFlood(&pkt);
 
   return true;
