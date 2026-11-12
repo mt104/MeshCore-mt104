@@ -218,7 +218,7 @@ void BTHomeService::sendSensorData(uint8_t batteryPercent, uint16_t batteryVolta
   char neighbourData[10];
 
   // If TX power has changed send that in neighbourData instead of SNR
-  if (millis() - _lastTxPowerSent > 120000) {
+  if (millis() - _lastTxPowerSent > 120000 || _lastTxPowerSent > millis()) {
     sprintf(neighbourData, "TX %d", txPower);
     _lastTxPowerSent = millis();
   } else {
