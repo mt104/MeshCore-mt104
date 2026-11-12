@@ -164,7 +164,8 @@ void BTHomeService::updateNeighboursSNR(uint8_t from, float snr) {
   }
 }
 
-void BTHomeService::sendSensorData(uint8_t batteryPercent, uint16_t batteryVoltage, int8_t noiseFloor) {
+unsigned long _lastTxPowerSent = 0;
+void BTHomeService::sendSensorData(uint8_t batteryPercent, uint16_t batteryVoltage, int8_t noiseFloor, uint8_t txPower) {
 
   if (!isEnabled()) return;
 
@@ -213,15 +214,25 @@ void BTHomeService::sendSensorData(uint8_t batteryPercent, uint16_t batteryVolta
   }
   Serial.println("");
 
-  // Neighbours' SNR data as text, one at once using first in array
+  // Somewhere to build neighbour data, or something special, as text for the advertisement payload
   char neighbourData[10];
+
+  // If TX power has changed send that in neighbourData instead of SNR
+  if (millis() - _lastTxPowerSent > 120000) {
+    sprintf(neighbourData, "TX %d", txPower);
+    _lastTxPowerSent = millis();
+  } else {
+    // Neighbours' SNR data as text, one at once using first in array
+    sprintf(neighbourData, "%02X %0.2f", neighbours[0].id, neighbours[0].snr);
+    removeFirstNeighbour();
+  }
+
+  // Add neighbour data to the payload
   payload[pos++] = 0x53;
-  sprintf(neighbourData, "%02X %0.2f", neighbours[0].id, neighbours[0].snr);
   payload[pos++] = strlen(neighbourData);
   for (int i = 0; i < strlen(neighbourData); i++) {
     payload[pos++] = neighbourData[i];
   }
-  removeFirstNeighbour();
 
 #if defined(ESP32)
   BLEAdvertisementData advData;

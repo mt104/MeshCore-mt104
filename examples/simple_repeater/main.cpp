@@ -263,7 +263,8 @@ void loop() {
       if (batteryPercent < 0) batteryPercent = 0;
       if (batteryPercent > 100) batteryPercent = 100;
       // Update advertisment
-      bthomeService.sendSensorData(batteryPercent, (uint16_t)mv, radio_driver.getNoiseFloor());
+      bthomeService.sendSensorData(batteryPercent, (uint16_t)mv, radio_driver.getNoiseFloor(),
+                                   the_mesh.getNodePrefs()->tx_power_dbm);
     }
     last_bthome_send = millis();
   }
