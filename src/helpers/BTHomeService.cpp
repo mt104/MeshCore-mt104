@@ -8,7 +8,7 @@ BTHomeService bthomeService;
 
 char *_name = nullptr;
 bool _isEnabled = false;
-uint32_t _interval_seconds = 20;
+uint32_t _interval_seconds = 10;
 
 static char *keyIsEnabled = "bthome.enabled";
 static char *keyInterval = "bthome.interval";
@@ -58,7 +58,7 @@ void BTHomeService::init(const char *deviceName) {
   _name = strdup(deviceName);
 
   // Load the interval from tagHelper
-  _interval_seconds = atoi(tagHelper.getValue(keyInterval, "20"));
+  _interval_seconds = atoi(tagHelper.getValue(keyInterval, "10"));
 
   // Initialise _isEnabled based on the value stored in tagHelper, needed for first call
   _isEnabled = strcmp(tagHelper.getValue(keyIsEnabled, "1"), "1") == 0;
