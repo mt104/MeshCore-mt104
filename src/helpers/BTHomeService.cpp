@@ -176,10 +176,6 @@ void BTHomeService::sendSensorData(uint8_t batteryPercent, uint16_t batteryVolta
 
   if (!isEnabled()) return;
 
-#if defined(ESP32)
-  if (!isInitialized) init("MeshCore-Sensor");
-#endif
-
   uint8_t payload[100]; // Should really keep track of how much we need rather than having an arbitrary large buffer
 
   int pos = 0;
