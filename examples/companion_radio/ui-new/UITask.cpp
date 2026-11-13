@@ -39,7 +39,7 @@ BTHomeWatcher bthomeWatcher;
 class SplashScreen : public UIScreen {
   UITask* _task;
   unsigned long dismiss_after;
-  char _version_info[12];
+  char _version_info[20];
 
 public:
   SplashScreen(UITask* task) : _task(task) {
@@ -52,6 +52,7 @@ public:
     if (len >= sizeof(_version_info)) len = sizeof(_version_info) - 1;
     memcpy(_version_info, ver, len);
     _version_info[len] = 0;
+    strcat(_version_info, "-mt104");
 
     dismiss_after = millis() + BOOT_SCREEN_MILLIS;
   }
@@ -77,7 +78,8 @@ public:
 
     display.setColor(UIColor::secondary_txt);
     display.setTextSize(1);
-    display.drawTextCentered(display.width()/2, 48, FIRMWARE_BUILD_DATE);
+    const char *BUILD_TIMESTAMP = __DATE__ " " __TIME__;
+    display.drawTextCentered(display.width()/2, 45, BUILD_TIMESTAMP);
 
     return 1000;
   }
