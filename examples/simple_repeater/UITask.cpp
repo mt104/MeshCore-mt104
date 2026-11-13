@@ -52,8 +52,8 @@ void UITask::begin(NodePrefs* node_prefs, const char* build_date, const char* fi
     *dash = 0;
   }
 
-  // v1.2.3 (1 Jan 2025)
-  snprintf(_version_info, sizeof(_version_info), "%s (%s)", version, build_date);
+  const char *BUILD_TIMESTAMP = __DATE__ " " __TIME__;
+  snprintf(_version_info, sizeof(_version_info), "%s-mt104 (%s)", version, BUILD_TIMESTAMP);
   free(version);
 }
 

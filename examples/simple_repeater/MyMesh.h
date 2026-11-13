@@ -180,8 +180,9 @@ public:
 
   void begin(FILESYSTEM* fs);
   void sendNodeDiscoverReq();
-  const char* getFirmwareVer() override { return FIRMWARE_VERSION; }
-  const char* getBuildDate() override { return FIRMWARE_BUILD_DATE; }
+  const char* getFirmwareVer() override { return "v1.18.0-mt104"; }
+  const char *BUILD_TIMESTAMP = __DATE__ " " __TIME__;
+  const char* getBuildDate() override { return BUILD_TIMESTAMP; }
   const char* getRole() override { return FIRMWARE_ROLE; }
   const char* getNodeName() { return _prefs.node_name; }
   NodePrefs* getNodePrefs() {
