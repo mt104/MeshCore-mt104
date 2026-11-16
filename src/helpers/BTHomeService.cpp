@@ -205,6 +205,7 @@ void BTHomeService::sendSensorData(uint8_t batteryPercent, uint16_t batteryVolta
   payload[pos++] = packetsPerMinute;
 
   // Neighbours' SNR to serial port for debugging, converting the 3 bytes in id to a string in hex
+  #if false
   for (int i = 0; i < BTHOME_MAX_NEIGHBOURS; i++) {
     if (neighbours[i].id != 0) {
       char idStr[3];
@@ -216,6 +217,7 @@ void BTHomeService::sendSensorData(uint8_t batteryPercent, uint16_t batteryVolta
     }
   }
   Serial.println("");
+  #endif
 
   // Somewhere to build neighbour data, or something special, as text for the advertisement payload
   char neighbourData[10];
