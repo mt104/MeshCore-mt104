@@ -36,10 +36,11 @@ public:
     return memcmp(hash, pub_key, len) == 0;
   }
 
-  bool isHashMatchAnywhereInPath(const uint8_t *hash, const uint8_t *path, uint8_t path_len) const {
+  bool isHashMatchAnywhereInPath(const uint8_t *hash, const uint8_t *path, uint8_t path_len, int max_depth = 0) const {
     int hash_size = (path_len >> 6) + 1;
     int hash_count = path_len & 63;
     for (int i = 0; i < hash_count; i++) {
+      if (max_depth > 0 && i >= max_depth) break;
       if (memcmp(hash, &path[i*hash_size], hash_size) == 0) {
 #ifdef ESP32
         char buffer[200];
