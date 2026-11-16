@@ -96,9 +96,10 @@ DispatcherAction Mesh::onRecvPacket(Packet* pkt) {
     }
 
     // if (self_id.isHashMatch(pkt->path, pkt->getPathHashSize()) && allowPacketForward(pkt)) {
+    uint8_t maxRemove = 10; // TODO: Make this configurable?
     uint8_t my_hash[PATH_HASH_SIZE];
     self_id.copyHashTo(my_hash);
-    if (self_id.isHashMatchAnywhereInPath(my_hash, pkt->path, pkt->path_len) && allowPacketForward(pkt)) {
+    if (self_id.isHashMatchAnywhereInPath(my_hash, pkt->path, pkt->path_len, maxRemove) && allowPacketForward(pkt)) {
       uint32_t d = getDirectRetransmitDelay(pkt);
       if (pkt->getPayloadType() == PAYLOAD_TYPE_MULTIPART) {
         return forwardMultipartDirect(pkt, d);
@@ -113,17 +114,23 @@ DispatcherAction Mesh::onRecvPacket(Packet* pkt) {
 
       if (!_tables->wasSeen(pkt)) {
         _tables->markSeen(pkt);
-        //Serial.printf("DEBUG_MARKT: Preparing to forward\r\n");
-        //Serial.printf("DEBUG_MARKT: Before removing self from path\r\n");
-        //pkt->debugToSerial(pkt);
-        int maxRemove = 10; // TODO: Make this configurable?
-        int removeCount = 0;
+        #if true
+        Serial.printf("DEBUG_MARKT: Before removing self from path\r\n");
+        pkt->debugToSerial(pkt);
+        #endif
+        uint8_t removeCount = 0;
         while (!self_id.isHashMatch(pkt->path, pkt->getPathHashSize()) && removeCount < maxRemove) {
           removeSelfFromPath(pkt);
           removeCount++;
         }
-        removeSelfFromPath(pkt);
-        return ACTION_RETRANSMIT_DELAYED(0, d);  // Routed traffic is HIGHEST priority 
+        if (removeCount < maxRemove) {
+          removeSelfFromPath(pkt);
+        }
+#if true
+        Serial.printf("DEBUG_MARKT: After removing self from path\r\n");
+        pkt->debugToSerial(pkt);
+#endif
+        return ACTION_RETRANSMIT_DELAYED(0, d); // Routed traffic is HIGHEST priority
       }
     }
 
