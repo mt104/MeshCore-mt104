@@ -157,11 +157,14 @@ void AutoPower::loop() {
 }
 
 uint16_t AutoPower::getBattMilliVoltsSmoothed() {
+    if (mvSmoothed == 0) {
+        return board.getBattMilliVolts();
+    }
     return mvSmoothed;
 }
 
 uint8_t AutoPower::getBattPercentCalibrated() {
-  return (uint8_t)((mvSmoothed - lowestSafeVoltage) * 100 / (mvHighestVoltageSeen - lowestSafeVoltage));
+  return (uint8_t)((getBattMilliVoltsSmoothed() - lowestSafeVoltage) * 100 / (mvHighestVoltageSeen - lowestSafeVoltage));
 }
 
 uint16_t AutoPower::getLargestDropRecently() {
