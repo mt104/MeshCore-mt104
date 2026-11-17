@@ -192,7 +192,7 @@ float AutoPower::hoursRemaining() {
     if (mvAverageDropRecently == 0) {
         return -1.0; // Unknown
     }
-    uint16_t voltageAboveSafe = mvSmoothed - lowestSafeVoltage;
+    uint16_t voltageAboveSafe = getBattMilliVoltsSmoothed() - lowestSafeVoltage;
     float hours = (float)voltageAboveSafe / (float)mvAverageDropRecently;
     return hours;
 }
