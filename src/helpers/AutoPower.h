@@ -8,9 +8,11 @@ public:
   void recalibrate();
   void loop();
   uint16_t getBattMilliVoltsSmoothed();
+  uint8_t getBattPercentCalibrated();
   uint16_t getLargestDropRecently();
   uint16_t getAverageDropRecently();
   uint16_t getLowestSafeVoltage();
+  uint16_t getHighestVoltageSeen();
   float hoursRemaining();
 };
 

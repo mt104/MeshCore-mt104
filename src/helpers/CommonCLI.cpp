@@ -562,8 +562,9 @@ void CommonCLI::handleCommand(uint32_t sender_timestamp, char* command, char* re
       strcpy(reply, "OK");
     } else if (memcmp(command, "autopower", 9) == 0) {
       char buffer[256];
-      sprintf(reply, "   Voltage: %dmV", board.getBattMilliVolts());
-      const char* dropFloodMv = tagHelper.getValue("autopower.dropfloodmv");
+      sprintf(reply, "   Now: %dmV (%d%%)", board.getBattMilliVolts(), autoPower.getBattPercentCalibrated());
+      sprintf(reply + strlen(reply), "\n   Range: %dmV to %dmV", autoPower.getLowestSafeVoltage(), autoPower.getHighestVoltageSeen());
+      const char *dropFloodMv = tagHelper.getValue("autopower.dropfloodmv");
       if (dropFloodMv != nullptr && strlen(dropFloodMv) > 0) {
         sprintf(buffer, "\n   dropfloodmv: %s", dropFloodMv);
       } else {
@@ -571,19 +572,22 @@ void CommonCLI::handleCommand(uint32_t sender_timestamp, char* command, char* re
       }
       strcat(reply, buffer);
       uint16_t largestDrop = autoPower.getLargestDropRecently();
-      if (largestDrop > 0) {
-        sprintf(reply + strlen(reply), "\n   Highest mV/h: %dmV", largestDrop);
-      }
       uint16_t averageDrop = autoPower.getAverageDropRecently();
       if (averageDrop > 0) {
-        sprintf(reply + strlen(reply), "\n   Average mV/h: %dmV", averageDrop);
+        if (largestDrop > 0) {
+          sprintf(reply + strlen(reply), "\n   mV/h: %dmV (Max. %dmV)", averageDrop, largestDrop);
+        } else {
+          sprintf(reply + strlen(reply), "\n   mV/h: %dmV", averageDrop);
+        }
       }
-      sprintf(reply + strlen(reply), "\n   Safe Voltage: %dmV", autoPower.getLowestSafeVoltage());
       float hours = autoPower.hoursRemaining();
       if (hours >= 0) {
-        sprintf(reply + strlen(reply), "\n   Hours Remaining: %.2f", hours);
+        // Show as hours and minutes in format NNhNNm
+        int hoursInt = (int)hours;
+        int minutesInt = (int)((hours - hoursInt) * 60);
+        sprintf(reply + strlen(reply), "\n   Remaining: %dh%dm", hoursInt, minutesInt);
       } else {
-        strcat(reply, "\n   Hours Remaining: Unknown");
+        strcat(reply, "\n   Hours Left: Unknown");
       }
     } else {
       strcpy(reply, "Unknown command");

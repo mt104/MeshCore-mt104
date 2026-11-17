@@ -29,6 +29,11 @@ uint16_t lowestSafeVoltage = 0;
 const uint16_t DEFAULT_LOWEST_SAFE_VOLTAGE = 3500;
 const char *tagLowestSafeVoltage = "autopower.lowestsafevoltage";
 
+// Highest Voltage seen, i.e. "full charge" voltage
+uint16_t mvHighestVoltageSeen = 0;
+const uint16_t DEFAULT_HIGHEST_VOLTAGE_SEEN = 4100;
+const char *tagHighestVoltageSeen = "autopower.highestvoltageseen";
+
 void AutoPower::setup() {
     mvLatest = board.getBattMilliVolts();
     for (int i = 0; i < NUM_SAMPLES; i++) {
@@ -41,6 +46,7 @@ void AutoPower::setup() {
         mvDropPerHour[i] = mvAverageDropRecently;
     }
     lowestSafeVoltage = tagHelper.getIntValue((char *)tagLowestSafeVoltage, DEFAULT_LOWEST_SAFE_VOLTAGE);
+    mvHighestVoltageSeen = tagHelper.getIntValue((char *)tagHighestVoltageSeen, DEFAULT_HIGHEST_VOLTAGE_SEEN);
 }
 
 void AutoPower::recalibrate() {
@@ -62,6 +68,8 @@ void AutoPower::recalibrate() {
     tagHelper.setIntValue((char *)tagHighestMvDropPerHour, mvLargestDropRecently);
     mvAverageDropRecently = 0;
     tagHelper.setIntValue((char *)tagAverageMvDropRecently, mvAverageDropRecently);
+    mvHighestVoltageSeen = DEFAULT_HIGHEST_VOLTAGE_SEEN;
+    tagHelper.setIntValue((char *)tagHighestVoltageSeen, mvHighestVoltageSeen);
 }
 
 void AutoPower::loop() {
@@ -90,6 +98,10 @@ void AutoPower::loop() {
     }
     if (mvSmoothed > highestVoltageSoFarThisHour) {
       highestVoltageSoFarThisHour = mvSmoothed;
+    }
+    if (mvSmoothed > mvHighestVoltageSeen) {
+      mvHighestVoltageSeen = mvSmoothed;
+      tagHelper.setIntValue((char *)tagHighestVoltageSeen, mvHighestVoltageSeen);
     }
 
     // Hourly update check using safe subtraction
@@ -148,6 +160,10 @@ uint16_t AutoPower::getBattMilliVoltsSmoothed() {
     return mvSmoothed;
 }
 
+uint8_t AutoPower::getBattPercentCalibrated() {
+  return (uint8_t)((mvSmoothed - lowestSafeVoltage) * 100 / (mvHighestVoltageSeen - lowestSafeVoltage));
+}
+
 uint16_t AutoPower::getLargestDropRecently() {
     if ((mvLargestDropRecently > 0)) {
         return mvLargestDropRecently;
@@ -161,6 +177,10 @@ uint16_t AutoPower::getAverageDropRecently() {
 
 uint16_t AutoPower::getLowestSafeVoltage() {
     return lowestSafeVoltage;
+}
+
+uint16_t AutoPower::getHighestVoltageSeen() {
+    return mvHighestVoltageSeen;
 }
 
 float AutoPower::hoursRemaining() {
