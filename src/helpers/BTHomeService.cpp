@@ -3,6 +3,7 @@
 #if defined(ESP32) or defined(NRF52_PLATFORM)
 
 #include "TagHelper.h"
+#include "AutoPower.h"
 
 BTHomeService bthomeService;
 
@@ -172,7 +173,7 @@ void BTHomeService::updateNeighboursSNR(uint8_t from, float snr) {
 unsigned long _lastTxPowerSent = 0;
 unsigned long _lastTemperatureSent = 0;
 unsigned long _lastNodeIdSent = 0;
-void BTHomeService::sendSensorData(uint8_t batteryPercent, uint16_t batteryVoltage, int8_t noiseFloor, uint8_t txPower, float temperature) {
+void BTHomeService::sendSensorData(AutoPower autoPower, int8_t noiseFloor, uint8_t txPower, float temperature) {
 
   if (!isEnabled()) return;
 
@@ -188,8 +189,9 @@ void BTHomeService::sendSensorData(uint8_t batteryPercent, uint16_t batteryVolta
   payload[pos++] = 0x40;
 
   payload[pos++] = 0x01;
-  payload[pos++] = batteryPercent;
+  payload[pos++] = autoPower.getBattPercentCalibrated();
   payload[pos++] = 0x0c;
+  uint16_t batteryVoltage = autoPower.getBattMilliVoltsSmoothed();
   payload[pos++] = (uint8_t)(batteryVoltage & 0xFF);
   payload[pos++] = (uint8_t)((batteryVoltage >> 8) & 0xFF);
   // Generic 8 bit signed integer sensor (noise floor)
