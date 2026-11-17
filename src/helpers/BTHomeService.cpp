@@ -173,6 +173,9 @@ void BTHomeService::updateNeighboursSNR(uint8_t from, float snr) {
 unsigned long _lastTxPowerSent = 0;
 unsigned long _lastTemperatureSent = 0;
 unsigned long _lastNodeIdSent = 0;
+unsigned long _lastLowestVoltageSent = 0;
+unsigned long _lastHighestVoltageSent = 0;
+unsigned long _lastSafeVoltageSent = 0;
 void BTHomeService::sendSensorData(AutoPower autoPower, int8_t noiseFloor, uint8_t txPower, float temperature) {
 
   if (!isEnabled()) return;
@@ -221,24 +224,42 @@ void BTHomeService::sendSensorData(AutoPower autoPower, int8_t noiseFloor, uint8
   Serial.println("");
   #endif
 
+  uint32_t now = millis();
+
+  const uint32_t msIntervalTemperature = 90000;
+  const uint32_t msIntervalHighestVoltage = 101000;
+  const uint32_t msIntervalSafeVoltage = 112000;
+  const uint32_t msIntervalTXPower = 123000;
+  const uint32_t msIntervalNodeId = 600000;
+
   // Somewhere to build neighbour data, or something special, as text for the advertisement payload
   char neighbourData[10];
 
   // If TX power has changed send that in neighbourData instead of SNR
-  if (millis() - _lastTxPowerSent > 120000 || _lastTxPowerSent > millis()) {
+  if (now - _lastTxPowerSent > msIntervalTXPower || _lastTxPowerSent > now) {
     sprintf(neighbourData, "TX %d", txPower);
-    _lastTxPowerSent = millis();
-  } else if (millis() - _lastTemperatureSent > 90000 || _lastTemperatureSent > millis()) {
+    _lastTxPowerSent = now;
+  }
+  else if (now - _lastTemperatureSent > msIntervalTemperature || _lastTemperatureSent > now) {
     sprintf(neighbourData, "TC %.2f", temperature);
-    _lastTemperatureSent = millis();
-  } else if (millis() - _lastNodeIdSent > 100000 || _lastNodeIdSent > millis()) {
+    _lastTemperatureSent = now;
+  }
+  else if (now - _lastNodeIdSent > msIntervalNodeId || _lastNodeIdSent > now) {
     sprintf(neighbourData, "I %s", _nodeIdStr);
-    _lastNodeIdSent = millis();
-  } else if (neighbours[0].id != 0) {
+    _lastNodeIdSent = now;
+  } else if (now - _lastHighestVoltageSent > msIntervalHighestVoltage || _lastHighestVoltageSent > now) {
+    sprintf(neighbourData, "HV %d", autoPower.getHighestVoltageSeen());
+    _lastHighestVoltageSent = now;
+  } else if (now - _lastSafeVoltageSent > msIntervalSafeVoltage || _lastSafeVoltageSent > now) {
+    sprintf(neighbourData, "SV %d", autoPower.getLowestSafeVoltage());
+    _lastSafeVoltageSent = now;
+  }
+  else if (neighbours[0].id != 0) {
     // Neighbours' SNR data as text, one at once using first in array
     sprintf(neighbourData, "%02X %0.2f", neighbours[0].id, neighbours[0].snr);
     removeFirstNeighbour();
-  } else {
+  }
+  else {
     return; // Bail out if there's nothing to report
   }
 
