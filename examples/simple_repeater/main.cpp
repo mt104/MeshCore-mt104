@@ -266,7 +266,7 @@ void loop() {
       if (batteryPercent > 100) batteryPercent = 100;
 
       // Update advertisment
-      bthomeService.sendSensorData(batteryPercent, (uint16_t)mv, radio_driver.getNoiseFloor(),
+      bthomeService.sendSensorData(autoPower.getBattPercentCalibrated(), (uint16_t)mv, radio_driver.getNoiseFloor(),
                                    the_mesh.getNodePrefs()->tx_power_dbm, board.getMCUTemperature());
     }
     last_bthome_send = millis();
