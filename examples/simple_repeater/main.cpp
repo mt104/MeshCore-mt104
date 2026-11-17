@@ -258,16 +258,8 @@ void loop() {
   // Send BTHome sensor data periodically
   if (millis() - last_bthome_send >= bthomeService.getIntervalSeconds() * 1000 || last_bthome_send > millis()) {
     if (bthomeService.isEnabled()) {
-      // Battery Voltage in millivolts
-      float mv = autoPower.getBattMilliVoltsSmoothed();
-      // Calculate battery percent, assuming that 0% is 3000mV and 100% is 4200mV
-      int batteryPercent = (mv - 3000) * 100 / (4200 - 3000);
-      if (batteryPercent < 0) batteryPercent = 0;
-      if (batteryPercent > 100) batteryPercent = 100;
-
       // Update advertisment
-      bthomeService.sendSensorData(autoPower.getBattPercentCalibrated(), (uint16_t)mv, radio_driver.getNoiseFloor(),
-                                   the_mesh.getNodePrefs()->tx_power_dbm, board.getMCUTemperature());
+      bthomeService.sendSensorData(autoPower, radio_driver.getNoiseFloor(), the_mesh.getNodePrefs()->tx_power_dbm, board.getMCUTemperature());
     }
     last_bthome_send = millis();
   }
