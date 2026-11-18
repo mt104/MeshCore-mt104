@@ -573,11 +573,13 @@ mesh::DispatcherAction MyMesh::onRecvPacket(mesh::Packet* pkt) {
     recv_pkt_region = NULL;
   }
 
+  bool isFloodHeardDirect = false;
 #if defined(ESP32) or defined(NRF52_PLATFORM)
   // If this is a flood packet then look in the path for the last hop
   if (pkt->isRouteFlood()) {
     // Who did we receive this packet from?  Look in the path for the last hop
     if (pkt->getPathHashCount() > 0) {
+      isFloodHeardDirect = true;
       float last_hop_snr = pkt->getSNR();
       uint8_t heard_from = pkt->path[pkt->getPathByteLen() - 1];
       bthomeService.updateNeighboursSNR(heard_from, last_hop_snr);
@@ -585,7 +587,12 @@ mesh::DispatcherAction MyMesh::onRecvPacket(mesh::Packet* pkt) {
   }
 #endif
 
-  return Mesh::onRecvPacket(pkt);
+  mesh::DispatcherAction action = Mesh::onRecvPacket(pkt);
+  if (isFloodHeardDirect) {
+    // Note that we care about hearing someone else repeat this packet
+    //TODO: Maybe mark the packet, or keep it in a list?
+  }
+  return action;
 }
 
 void MyMesh::onAnonDataRecv(mesh::Packet *packet, const uint8_t *secret, const mesh::Identity &sender,
