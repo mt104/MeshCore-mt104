@@ -26,7 +26,7 @@ const char *tagAverageMvDropRecently = "autopower.averagedroprecently";
 
 // For tracking lowest safe Voltage
 uint16_t lowestSafeVoltage = 0;
-const uint16_t DEFAULT_LOWEST_SAFE_VOLTAGE = 3500;
+const uint16_t DEFAULT_LOWEST_SAFE_VOLTAGE = 3200;
 const char *tagLowestSafeVoltage = "autopower.lowestsafevoltage";
 
 // Highest Voltage seen, i.e. "full charge" voltage
@@ -164,7 +164,40 @@ uint16_t AutoPower::getBattMilliVoltsSmoothed() {
 }
 
 uint8_t AutoPower::getBattPercentCalibrated() {
-  return (uint8_t)((getBattMilliVoltsSmoothed() - lowestSafeVoltage) * 100 / (mvHighestVoltageSeen - lowestSafeVoltage));
+  // Handle overshoot above and below known Voltage range
+  if (getBattMilliVoltsSmoothed() <= lowestSafeVoltage) {
+      return 0;
+  }
+  if (getBattMilliVoltsSmoothed() >= mvHighestVoltageSeen) {
+      return 100;
+  }
+  uint16_t mvCurrent = getBattMilliVoltsSmoothed();
+  uint16_t mvHighestMinusLowest = mvHighestVoltageSeen - lowestSafeVoltage;
+  uint16_t mvCurrentMinusLowest = mvCurrent - lowestSafeVoltage;
+  uint8_t battPercent = (uint8_t)(mvCurrentMinusLowest * 100 / mvHighestMinusLowest);
+
+  /*
+  Serial.println();
+  Serial.print("Batt mV Smoothed: ");
+  Serial.println(getBattMilliVoltsSmoothed());
+  Serial.print("Lowest Safe Voltage: ");
+  Serial.println(lowestSafeVoltage);
+  Serial.print("Highest Voltage Seen: ");
+  Serial.println(mvHighestVoltageSeen);
+  Serial.print("Voltage Above Safe: ");
+  Serial.println(getBattMilliVoltsSmoothed() - lowestSafeVoltage);
+  Serial.print("mvHighestMinusLowest: ");
+  Serial.println(mvHighestMinusLowest);
+  Serial.print("mvCurrentMinusLowest: ");
+  Serial.println(mvCurrentMinusLowest);
+  Serial.print("Batt Percent: ");
+  Serial.println(battPercent);
+  */
+
+  // Make sure battPercent is within 0-100 range
+  if (battPercent > 100) battPercent = 100;
+  if (battPercent < 0) battPercent = 0;
+  return battPercent;
 }
 
 uint16_t AutoPower::getLargestDropRecently() {
