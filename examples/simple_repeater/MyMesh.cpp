@@ -588,17 +588,19 @@ mesh::DispatcherAction MyMesh::onRecvPacket(mesh::Packet* pkt) {
 #endif
 
   mesh::DispatcherAction action = Mesh::onRecvPacket(pkt);
-  // Is this a flood packet that we heard directly and haven't seen before?
-  if (isFloodHeardDirect && action != 0 /* RELEASE */ && !Mesh::wasSeen(pkt)) {
+
+  // Is this a group text packet that we heard directly and haven't seen before?
+  if (isFloodHeardDirect && action != 0 /* RELEASE */
+      && !Mesh::wasSeen(pkt) // Comment this one to make testing easier
+      && pkt->getPayloadType() == 0x05 /* GROUP_TEXT */
+  ) {
     // Note that we care about hearing someone else repeat this packet
     pkt->wantToHearSomeoneElseRepeat = true;
     pkt->heardTimestamp = millis();
-    Serial.println("Heard flood packet directly and haven't seen it before.");
+    Serial.println("Heard flood group text packet directly and haven't seen it before");
 
     //TODO: Save this packet in a local list to look at later
     //TODO: Periodically check the saved packets to see if they have been repeated by others, if so forget them, otherwise take appropriate action (e.g., retransmit)
-    //TODO: Track ACKs or confirmations from other nodes for this packet, then forget it once confirmed
-
   }
   return action;
 }
