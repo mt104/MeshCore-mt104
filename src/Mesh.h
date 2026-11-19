@@ -153,6 +153,8 @@ protected:
    */
   virtual int searchChannelsByHash(const uint8_t* hash, GroupChannel channels[], int max_matches);
 
+  bool wasSeen(const mesh::Packet *packet);
+
   /**
    * \brief  An encrypted group data packet has been received.
    *         NOTE: the same payload can be received multiple times, via different routes

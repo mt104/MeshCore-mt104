@@ -47,6 +47,10 @@ int Mesh::searchChannelsByHash(const uint8_t* hash, GroupChannel channels[], int
   return 0;  // not found
 }
 
+bool Mesh::wasSeen(const mesh::Packet* packet) {
+  return _tables->wasSeen(packet);
+}
+
 DispatcherAction Mesh::onRecvPacket(Packet* pkt) {
   if (pkt->isRouteDirect() && pkt->getPayloadType() == PAYLOAD_TYPE_TRACE) {
     if (pkt->path_len < MAX_PATH_SIZE) {

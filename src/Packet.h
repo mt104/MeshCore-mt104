@@ -50,6 +50,10 @@ public:
   uint8_t payload[MAX_PACKET_PAYLOAD];
   int8_t _snr;
 
+  // Keep track of whether we want to hear someone else repeat this packet, and when we heard it
+  bool wantToHearSomeoneElseRepeat = false;
+  uint32_t heardTimestamp = 0;  // timestamp of when we heard this packet, not used for all packets
+
   /**
    * \brief calculate the hash of payload + type
    * \param  dest_hash   destination to store the hash (must be MAX_HASH_SIZE bytes)
