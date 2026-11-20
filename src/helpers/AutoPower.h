@@ -8,6 +8,7 @@ public:
   void recalibrate();
   void loop();
   uint16_t getBattMilliVoltsSmoothed();
+  uint8_t getBattPercentSmoothed();
   uint8_t getBattPercentCalibrated();
   uint16_t getLargestDropRecently();
   uint16_t getAverageDropRecently();

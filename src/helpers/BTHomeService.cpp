@@ -192,7 +192,7 @@ void BTHomeService::sendSensorData(AutoPower autoPower, int8_t noiseFloor, uint8
   payload[pos++] = 0x40;
 
   payload[pos++] = 0x01;
-  payload[pos++] = autoPower.getBattPercentCalibrated();
+  payload[pos++] = autoPower.getBattPercentSmoothed();
   payload[pos++] = 0x0c;
   uint16_t batteryVoltage = autoPower.getBattMilliVoltsSmoothed();
   payload[pos++] = (uint8_t)(batteryVoltage & 0xFF);

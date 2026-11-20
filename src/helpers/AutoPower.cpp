@@ -163,6 +163,18 @@ uint16_t AutoPower::getBattMilliVoltsSmoothed() {
     return mvSmoothed;
 }
 
+const uint16_t MIN_BATT_MV = 3000;
+const uint16_t MAX_BATT_MV = 4200;
+uint8_t AutoPower::getBattPercentSmoothed() {
+    uint16_t mvSmoothed = getBattMilliVoltsSmoothed();
+    uint16_t mvRange = MAX_BATT_MV - MIN_BATT_MV;
+    uint16_t mvAboveSafe = mvSmoothed - MIN_BATT_MV;
+    uint8_t battPercent = (uint8_t)(mvAboveSafe * 100 / mvRange);
+    if (battPercent > 100) battPercent = 100;
+    if (battPercent < 0) battPercent = 0;
+    return battPercent;
+}
+
 uint8_t AutoPower::getBattPercentCalibrated() {
   // Handle overshoot above and below known Voltage range
   if (getBattMilliVoltsSmoothed() <= lowestSafeVoltage) {

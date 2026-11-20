@@ -562,7 +562,7 @@ void CommonCLI::handleCommand(uint32_t sender_timestamp, char* command, char* re
       strcpy(reply, "OK");
     } else if (memcmp(command, "autopower", 9) == 0) {
       char buffer[256];
-      sprintf(reply, "   Now: %dmV (%d%%)", board.getBattMilliVolts(), autoPower.getBattPercentCalibrated());
+      sprintf(reply, "   Now: %dmV (%d%%)", board.getBattMilliVolts(), autoPower.getBattPercentSmoothed());
       sprintf(reply + strlen(reply), "\n   Range: %dmV to %dmV", autoPower.getLowestSafeVoltage(), autoPower.getHighestVoltageSeen());
       const char *dropFloodMv = tagHelper.getValue("autopower.dropfloodmv");
       if (dropFloodMv != nullptr && strlen(dropFloodMv) > 0) {
