@@ -232,6 +232,13 @@ void CommonCLI::handleCommand(uint32_t sender_timestamp, char* command, char* re
         strcpy(reply, "ERR: clock cannot go backwards");
       }
     } else if (memcmp(command, "start ota", 9) == 0) {
+      // Make sure BTHome isnt on first on NRF52 platform before starting OTA
+      #if defined(NRF52_PLATFORM)
+      if (bthomeService.isEnabled()) {
+        strcpy(reply, "ERR: BTHome service must be disabled before OTA");
+        return;
+      }
+      #endif
       if (!_board->startOTAUpdate(_prefs->node_name, reply)) {
         strcpy(reply, "Error");
       }
